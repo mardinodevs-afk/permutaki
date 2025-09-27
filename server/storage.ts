@@ -1,6 +1,6 @@
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 import { db } from "./db";
-import { users, reports, ratings } from "@shared/schema";
+import { users, reports, ratings, locationHistory } from "@shared/schema";
 import type { insertUserSchema, loginUserSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -23,10 +23,10 @@ export const locationHistory = {
 
 export const storage = {
   // User operations
-  async insertUser(userData: Omit<InsertUser, "id" | "createdAt"> & { 
-    isAdmin?: boolean; 
-    isPremium?: boolean; 
-    isActive?: boolean; 
+  async insertUser(userData: Omit<InsertUser, "id" | "createdAt"> & {
+    isAdmin?: boolean;
+    isPremium?: boolean;
+    isActive?: boolean;
   }): Promise<User> {
     try {
       const [newUser] = await db.insert(users).values({
@@ -71,7 +71,6 @@ export const storage = {
     if (!user) return { success: false, message: 'Usuário não encontrado' };
 
     // Check if user can update location based on their plan and last update
-    const now = new Date();
     const canUpdate = await this.canUpdateLocation(userId, type, user.isPremium || false);
 
     if (!canUpdate.allowed) {
@@ -83,7 +82,7 @@ export const storage = {
       await this.addLocationHistory(userId, type, user, province, district);
 
       // Update user location
-      const updates = type === 'current' 
+      const updates = type === 'current'
         ? { currentProvince: province, currentDistrict: district }
         : { desiredProvince: province, desiredDistrict: district };
 
@@ -95,8 +94,8 @@ export const storage = {
   },
 
   async canUpdateLocation(
-    userId: string, 
-    type: 'current' | 'desired', 
+    userId: string,
+    type: 'current' | 'desired',
     isPremium: boolean
   ): Promise<{ allowed: boolean; reason?: string }> {
     // Current location can only be updated once
@@ -130,17 +129,54 @@ export const storage = {
     newProvince: string,
     newDistrict: string
   ): Promise<void> {
-    // This would insert into a location_history table
-    // For now, we'll simulate with a log
-    console.log(`Location history: User ${userId} changed ${type} from ${
-      type === 'current' ? `${user.currentProvince}, ${user.currentDistrict}` : `${user.desiredProvince}, ${user.desiredDistrict}`
-    } to ${newProvince}, ${newDistrict}`);
+    const oldProvince = type === 'current' ? user.currentProvince : user.desiredProvince;
+    const oldDistrict = type === 'current' ? user.currentDistrict : user.desiredDistrict;
+
+    await db.insert(locationHistory).values({
+      userId,
+      type,
+      oldProvince: oldProvince || '',
+      oldDistrict: oldDistrict || '',
+      newProvince,
+      newDistrict,
+      editedAt: new Date(),
+    });
   },
 
   async getLocationHistory(): Promise<any[]> {
-    // This would return actual location history from database
-    // For now, returning empty array
-    return [];
+    try {
+      const history = await db
+        .select({
+          id: locationHistory.id,
+          userId: locationHistory.userId,
+          type: locationHistory.type,
+          oldProvince: locationHistory.oldProvince,
+          oldDistrict: locationHistory.oldDistrict,
+          newProvince: locationHistory.newProvince,
+          newDistrict: locationHistory.newDistrict,
+          editedAt: locationHistory.editedAt,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          isPremium: users.isPremium
+        })
+        .from(locationHistory)
+        .leftJoin(users, eq(locationHistory.userId, users.id))
+        .orderBy(desc(locationHistory.editedAt));
+
+      return history.map(edit => ({
+        id: edit.id,
+        userId: edit.userId,
+        userName: `${edit.firstName} ${edit.lastName}`,
+        editType: edit.type === 'current' ? 'current_location' : 'desired_location',
+        oldValue: edit.oldProvince && edit.oldDistrict ? `${edit.oldProvince}, ${edit.oldDistrict}` : 'N/A',
+        newValue: `${edit.newProvince}, ${edit.newDistrict}`,
+        editDate: edit.editedAt || new Date(),
+        userType: edit.isPremium ? 'Premium' : 'Free'
+      }));
+    } catch (error) {
+      console.error("Error getting location history:", error);
+      throw error;
+    }
   },
 
   // Password operations
@@ -208,20 +244,53 @@ export const storage = {
 
   // Statistics
   async getUserStats(): Promise<{
-    total: number;
-    active: number;
-    premium: number;
-    byProvince: Record<string, number>;
+    totalUsers: number;
+    activeUsers: number;
+    premiumUsers: number;
+    freeUsers: number;
+    editsToday: number;
+    editsThisWeek: number;
+    editsThisMonth: number;
   }> {
-    const totalUsers = await db.select({ count: sql`count(*)` }).from(users);
-    const activeUsers = await db.select({ count: sql`count(*)` }).from(users).where(eq(users.isActive, true));
-    const premiumUsers = await db.select({ count: sql`count(*)` }).from(users).where(eq(users.isPremium, true));
+    try {
+      const allUsers = await this.getAllUsers();
+      const totalUsers = allUsers.length;
+      const activeUsers = allUsers.filter(user => user.isActive).length;
+      const premiumUsers = allUsers.filter(user => user.isPremium).length;
+      const freeUsers = totalUsers - premiumUsers;
 
-    return {
-      total: Number(totalUsers[0]?.count) || 0,
-      active: Number(activeUsers[0]?.count) || 0,
-      premium: Number(premiumUsers[0]?.count) || 0,
-      byProvince: {}, // Would implement province statistics
-    };
+      // Get edit counts from location history
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      const allHistory = await db.select().from(locationHistory);
+
+      const editsToday = allHistory.filter(edit =>
+        edit.editedAt && edit.editedAt >= today
+      ).length;
+
+      const editsThisWeek = allHistory.filter(edit =>
+        edit.editedAt && edit.editedAt >= weekAgo
+      ).length;
+
+      const editsThisMonth = allHistory.filter(edit =>
+        edit.editedAt && edit.editedAt >= monthAgo
+      ).length;
+
+      return {
+        totalUsers,
+        activeUsers,
+        premiumUsers,
+        freeUsers,
+        editsToday,
+        editsThisWeek,
+        editsThisMonth
+      };
+    } catch (error) {
+      console.error("Error getting user stats:", error);
+      throw error;
+    }
   },
 };

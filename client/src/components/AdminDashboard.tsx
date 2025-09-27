@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -8,76 +8,35 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LogOut, Search, Users, History, Calendar, MapPin, DollarSign } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import { useToast } from "@/hooks/use-toast";
 
-// todo: remove mock functionality
-const mockUserEditHistory = [
-  {
-    id: "edit1",
-    userId: "user1",
-    userName: "João Silva",
-    editType: "desired_location",
-    oldValue: "Maputo, Matola",
-    newValue: "Nampula, Nacala",
-    editDate: new Date("2024-01-15T10:30:00"),
-    userType: "Free"
-  },
-  {
-    id: "edit2",
-    userId: "user2",
-    userName: "Maria Santos",
-    editType: "current_location",
-    oldValue: "Tete, Moatize",
-    newValue: "Maputo, KaMpfumo",
-    editDate: new Date("2024-01-14T14:22:00"),
-    userType: "Premium"
-  },
-  {
-    id: "edit3",
-    userId: "user1",
-    userName: "João Silva",
-    editType: "salary_level",
-    oldValue: "Nível 12, Escalão B",
-    newValue: "Nível 15, Escalão B",
-    editDate: new Date("2024-01-10T09:15:00"),
-    userType: "Free"
-  },
-  {
-    id: "edit4",
-    userId: "user3",
-    userName: "Carlos Machel",
-    editType: "desired_location",
-    oldValue: "Inhambane, Maxixe",
-    newValue: "Sofala, Beira",
-    editDate: new Date("2024-01-12T16:45:00"),
-    userType: "Premium"
-  },
-  {
-    id: "edit5",
-    userId: "user2",
-    userName: "Maria Santos",
-    editType: "desired_location",
-    oldValue: "Maputo, KaMpfumo",
-    newValue: "Zambézia, Quelimane",
-    editDate: new Date("2024-01-13T11:20:00"),
-    userType: "Premium"
-  }
-];
+interface EditHistory {
+  id: string;
+  userId: string;
+  userName: string;
+  editType: string;
+  oldValue: string;
+  newValue: string;
+  editDate: Date;
+  userType: string;
+}
 
-const mockUserStats = {
-  totalUsers: 1247,
-  activeUsers: 892,
-  premiumUsers: 156,
-  freeUsers: 1091,
-  editsToday: 23,
-  editsThisWeek: 167,
-  editsThisMonth: 542
-};
+interface UserStats {
+  totalUsers: number;
+  activeUsers: number;
+  premiumUsers: number;
+  freeUsers: number;
+  editsToday: number;
+  editsThisWeek: number;
+  editsThisMonth: number;
+}
 
 interface AdminDashboardProps {
   onLogout: () => void;
 }
 
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
+  const { toast } = useToast();
   const [searchFilters, setSearchFilters] = useState({
     userName: "",
     editType: "all",
@@ -85,7 +44,64 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     dateRange: "all"
   });
 
-  const [filteredHistory, setFilteredHistory] = useState(mockUserEditHistory);
+  const [editHistory, setEditHistory] = useState<EditHistory[]>([]);
+  const [filteredHistory, setFilteredHistory] = useState<EditHistory[]>([]);
+  const [userStats, setUserStats] = useState<UserStats>({
+    totalUsers: 0,
+    activeUsers: 0,
+    premiumUsers: 0,
+    freeUsers: 0,
+    editsToday: 0,
+    editsThisWeek: 0,
+    editsThisMonth: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Load admin data on component mount
+  useEffect(() => {
+    loadAdminData();
+  }, []);
+
+  const loadAdminData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      
+      // Load user statistics
+      const statsResponse = await fetch('/api/admin/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (statsResponse.ok) {
+        const stats = await statsResponse.json();
+        setUserStats(stats);
+      }
+
+      // Load location history
+      const historyResponse = await fetch('/api/admin/location-history', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (historyResponse.ok) {
+        const history = await historyResponse.json();
+        setEditHistory(history);
+        setFilteredHistory(history);
+      }
+      
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados do administrador",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     if (confirm("Tem certeza que deseja sair?")) {
@@ -132,7 +148,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   const applyFilters = () => {
-    let filtered = mockUserEditHistory;
+    let filtered = editHistory;
 
     if (searchFilters.userName) {
       filtered = filtered.filter(edit => 
@@ -203,7 +219,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
               <Card className="p-6 text-center">
                 <Users className="h-8 w-8 mx-auto text-primary mb-2" />
                 <p className="text-sm text-muted-foreground">Total de Usuários</p>
-                <p className="text-2xl font-bold">{mockUserStats.totalUsers.toLocaleString()}</p>
+                <p className="text-2xl font-bold">{userStats.totalUsers.toLocaleString()}</p>
               </Card>
               
               <Card className="p-6 text-center">
@@ -211,7 +227,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   <Users className="h-4 w-4 text-green-600" />
                 </div>
                 <p className="text-sm text-muted-foreground">Usuários Activos</p>
-                <p className="text-2xl font-bold text-green-600">{mockUserStats.activeUsers.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-green-600">{userStats.activeUsers.toLocaleString()}</p>
               </Card>
               
               <Card className="p-6 text-center">
@@ -219,13 +235,13 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   <Users className="h-4 w-4 text-orange-600" />
                 </div>
                 <p className="text-sm text-muted-foreground">Usuários Premium</p>
-                <p className="text-2xl font-bold text-orange-600">{mockUserStats.premiumUsers.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-orange-600">{userStats.premiumUsers.toLocaleString()}</p>
               </Card>
               
               <Card className="p-6 text-center">
                 <History className="h-8 w-8 mx-auto text-blue-600 mb-2" />
                 <p className="text-sm text-muted-foreground">Edições Este Mês</p>
-                <p className="text-2xl font-bold text-blue-600">{mockUserStats.editsThisMonth.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-blue-600">{userStats.editsThisMonth.toLocaleString()}</p>
               </Card>
             </div>
 
@@ -235,15 +251,15 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 border rounded-lg">
                   <p className="text-sm text-muted-foreground">Hoje</p>
-                  <p className="text-xl font-bold">{mockUserStats.editsToday}</p>
+                  <p className="text-xl font-bold">{userStats.editsToday}</p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
                   <p className="text-sm text-muted-foreground">Esta Semana</p>
-                  <p className="text-xl font-bold">{mockUserStats.editsThisWeek}</p>
+                  <p className="text-xl font-bold">{userStats.editsThisWeek}</p>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
                   <p className="text-sm text-muted-foreground">Este Mês</p>
-                  <p className="text-xl font-bold">{mockUserStats.editsThisMonth}</p>
+                  <p className="text-xl font-bold">{userStats.editsThisMonth}</p>
                 </div>
               </div>
             </Card>

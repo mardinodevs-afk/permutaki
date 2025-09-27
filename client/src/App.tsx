@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { queryClient } from "./lib/queryClient";
 import LandingPage from "@/components/LandingPage";
 import UserDashboard from "@/components/UserDashboard";
+import AdminDashboard from "@/components/AdminDashboard";
 
 // todo: remove mock functionality - user authentication state
 type User = {
@@ -20,7 +21,7 @@ function App() {
 
   const handleLogin = async (phone: string, password: string) => {
     setIsLoading(true);
-    
+
     try {
       const response = await fetch('/api/login', {
         method: 'POST',
@@ -33,14 +34,14 @@ function App() {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('token', data.token);
-        
+
         // Get user profile
         const profileResponse = await fetch('/api/user/profile', {
           headers: {
             'Authorization': `Bearer ${data.token}`,
           },
         });
-        
+
         if (profileResponse.ok) {
           const userData = await profileResponse.json();
           const user: User = {
@@ -58,13 +59,13 @@ function App() {
     } catch (error) {
       alert('Erro de conexão');
     }
-    
+
     setIsLoading(false);
   };
 
   const handleRegister = async (data: any) => {
     setIsLoading(true);
-    
+
     try {
       const response = await fetch('/api/register', {
         method: 'POST',
@@ -90,7 +91,7 @@ function App() {
       if (response.ok) {
         const result = await response.json();
         localStorage.setItem('token', result.token);
-        
+
         const user: User = {
           id: result.user.id,
           name: `${result.user.firstName} ${result.user.lastName}`,
@@ -105,7 +106,7 @@ function App() {
     } catch (error) {
       alert('Erro de conexão');
     }
-    
+
     setIsLoading(false);
   };
 
@@ -114,13 +115,23 @@ function App() {
     setCurrentUser(null);
   };
 
+  // This function was not present in the original code, but it's used in the changes.
+  // Assuming it's meant to be called after a successful login.
+  const handleLoginSuccess = (userData: User) => {
+    setCurrentUser(userData);
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         {currentUser ? (
-          <UserDashboard onLogout={handleLogout} />
+          currentUser.isAdmin ? (
+            <AdminDashboard onLogout={handleLogout} />
+          ) : (
+            <UserDashboard onLogout={handleLogout} />
+          )
         ) : (
-          <LandingPage onLogin={handleLogin} onRegister={handleRegister} />
+          <LandingPage onLoginSuccess={handleLoginSuccess} />
         )}
         <Toaster />
       </TooltipProvider>
