@@ -70,27 +70,27 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-4 text-foreground">Links Importantes</h4>
             <div className="space-y-2">
-              <a 
-                href="#sobre" 
-                className="block text-sm text-muted-foreground hover:text-primary"
+              <button 
+                onClick={() => alert('Página em construção. Para mais informações, contacte-nos através dos meios disponíveis.')}
+                className="block text-sm text-muted-foreground hover:text-primary cursor-pointer text-left"
                 data-testid="link-about"
               >
                 Sobre Nós
-              </a>
-              <a 
-                href="#termos" 
-                className="block text-sm text-muted-foreground hover:text-primary"
+              </button>
+              <button 
+                onClick={() => alert('Página em construção. Para mais informações, contacte-nos através dos meios disponíveis.')}
+                className="block text-sm text-muted-foreground hover:text-primary cursor-pointer text-left"
                 data-testid="link-terms"
               >
                 Termos de Uso
-              </a>
-              <a 
-                href="#privacidade" 
-                className="block text-sm text-muted-foreground hover:text-primary"
+              </button>
+              <button 
+                onClick={() => alert('Página em construção. Para mais informações, contacte-nos através dos meios disponíveis.')}
+                className="block text-sm text-muted-foreground hover:text-primary cursor-pointer text-left"
                 data-testid="link-privacy"
               >
                 Política de Privacidade
-              </a>
+              </button>
             </div>
           </div>
         </div>

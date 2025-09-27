@@ -1,70 +1,159 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LogOut, Search, User, MessageCircle, Calendar, Shield } from "lucide-react";
+import { LogOut, Search, User, MessageCircle, Calendar, Shield, Camera, Eye, EyeOff, Trash2, Pause } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import UserCard from "./UserCard";
 import ThemeToggle from "./ThemeToggle";
 import { mozambiqueData, sectors } from "@shared/mozambique-data";
 
-// todo: remove mock functionality
-const mockCurrentUser = {
-  id: "current-user",
-  name: "João Silva",
-  sector: "Educação",
-  salaryLevel: 15,
-  grade: "B",
-  currentLocation: "Maputo, Matola",
-  desiredLocation: "Nampula, Nacala",
-  phone: "+258 84 123 4567",
-  email: "joao@email.com",
-  canEditProfile: true,
-  whatsappContactsUsed: 1,
-  maxDailyContacts: 2,
-  lastProfileUpdate: new Date("2024-01-15"),
-  isPremium: false
-};
+interface CurrentUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  sector: string;
+  salaryLevel: number;
+  grade: string;
+  currentProvince: string;
+  currentDistrict: string;
+  desiredProvince: string;
+  desiredDistrict: string;
+  phone: string;
+  email: string;
+  isPremium: boolean;
+  isAdmin: boolean;
+  whatsappContactsToday: number;
+}
 
-// todo: remove mock functionality
-const mockUsers = [
-  {
-    id: "user1",
-    name: "Maria Santos",
-    sector: "Educação", 
-    salaryLevel: 15,
-    grade: "B",
-    currentLocation: "Nampula, Nacala",
-    desiredLocation: "Maputo, Matola",
-    rating: 4.8,
-    reviewCount: 15,
-    isPriorityMatch: true
-  },
-  {
-    id: "user2", 
-    name: "Carlos Machel",
-    sector: "Educação",
-    salaryLevel: 15,
-    grade: "A",
-    currentLocation: "Nampula, Cidade",
-    desiredLocation: "Maputo, KaMpfumo",
-    rating: 4.2,
-    reviewCount: 8,
-    isPriorityMatch: false
-  }
-];
+interface SearchUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  sector: string;
+  salaryLevel: number;
+  grade: string;
+  currentProvince: string;
+  currentDistrict: string;
+  desiredProvince: string;
+  desiredDistrict: string;
+  rating?: number;
+  reviewCount?: number;
+}
 
 interface UserDashboardProps {
   onLogout: () => void;
 }
 
 export default function UserDashboard({ onLogout }: UserDashboardProps) {
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [searchUsers, setSearchUsers] = useState<SearchUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [searchFilters, setSearchFilters] = useState({
     sector: "all-sectors",
     currentProvince: "all-provinces",
     desiredProvince: "all-provinces"
+  });
+
+  const [profileData, setProfileData] = useState({
+    salaryLevel: 15,
+    grade: "B",
+    currentProvince: "",
+    currentDistrict: "",
+    desiredProvince: "",
+    desiredDistrict: "",
+    avatarUrl: ""
+  });
+
+  // Load user data on component mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch('/api/user/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setCurrentUser(userData);
+          setProfileData({
+            salaryLevel: userData.salaryLevel,
+            grade: userData.grade,
+            currentProvince: userData.currentProvince,
+            currentDistrict: userData.currentDistrict,
+            desiredProvince: userData.desiredProvince,
+            desiredDistrict: userData.desiredDistrict,
+            avatarUrl: ""
+          });
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, []);
+
+  // Load search results
+  useEffect(() => {
+    const loadSearchUsers = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const params = new URLSearchParams();
+        if (searchFilters.sector !== "all-sectors") {
+          params.append('sector', searchFilters.sector);
+        }
+        if (searchFilters.currentProvince !== "all-provinces") {
+          params.append('currentProvince', searchFilters.currentProvince);
+        }
+        if (searchFilters.desiredProvince !== "all-provinces") {
+          params.append('desiredProvince', searchFilters.desiredProvince);
+        }
+
+        const response = await fetch(`/api/users/search?${params}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const users = await response.json();
+          setSearchUsers(users);
+        }
+      } catch (error) {
+        console.error('Error loading search users:', error);
+      }
+    };
+
+    if (currentUser) {
+      loadSearchUsers();
+    }
+  }, [searchFilters, currentUser]);
+
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
   });
 
   const handleWhatsAppContact = (userId: string) => {
@@ -88,18 +177,71 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
     }
   };
 
-  const canEditProfile = () => {
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    
-    const oneWeekAfterSignup = new Date(mockCurrentUser.lastProfileUpdate);
-    oneWeekAfterSignup.setDate(oneWeekAfterSignup.getDate() + 7);
-    
-    return mockCurrentUser.canEditProfile && 
-           (mockCurrentUser.lastProfileUpdate < sixMonthsAgo || new Date() < oneWeekAfterSignup);
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // todo: implement actual file upload
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfileData(prev => ({ ...prev, avatarUrl: e.target?.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const canContactToday = mockCurrentUser.whatsappContactsUsed < mockCurrentUser.maxDailyContacts;
+  const handlePasswordChange = () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert("As palavras-passe não coincidem");
+      return;
+    }
+    // todo: implement actual password change
+    console.log("Password change requested");
+    setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    setShowPasswordForm(false);
+  };
+
+  const handleSuspendAccount = () => {
+    if (confirm("Tem certeza que deseja suspender a sua conta? Pode reactivá-la posteriormente.")) {
+      // todo: implement account suspension
+      console.log("Account suspension requested");
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    if (confirm("ATENÇÃO: Tem certeza que deseja eliminar permanentemente a sua conta? Esta acção não pode ser desfeita.")) {
+      if (confirm("Digite 'ELIMINAR' para confirmar")) {
+        // todo: implement account deletion
+        console.log("Account deletion requested");
+      }
+    }
+  };
+
+  // Validation functions
+  const canEditSalaryLevel = () => {
+    // For now, allow editing (would need to implement last update tracking)
+    return true;
+  };
+
+  const canEditCurrentLocation = () => {
+    // For now, allow editing (would need to implement tracking)
+    return true;
+  };
+
+  const canEditDesiredLocation = () => {
+    // For now, allow editing (would need to implement tracking)
+    return true;
+  };
+
+  const canChangePassword = () => {
+    // For now, allow 3 changes per day (would need to implement tracking)
+    return true;
+  };
+
+  const canContactToday = currentUser ? (currentUser.whatsappContactsToday < (currentUser.isPremium ? 10 : 2)) : false;
+
+  const getCurrentDistricts = (province: string) => {
+    return province ? mozambiqueData[province as keyof typeof mozambiqueData] || [] : [];
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -113,10 +255,12 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
           
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="font-medium text-foreground">{mockCurrentUser.name}</p>
+              <p className="font-medium text-foreground">
+                {currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "Carregando..."}
+              </p>
               <div className="flex items-center gap-2">
-                <Badge variant={mockCurrentUser.isPremium ? "default" : "secondary"}>
-                  {mockCurrentUser.isPremium ? "Premium" : "Gratuito"}
+                <Badge variant={currentUser?.isPremium ? "default" : "secondary"}>
+                  {currentUser?.isPremium ? "Premium" : "Gratuito"}
                 </Badge>
               </div>
             </div>
@@ -154,8 +298,8 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4 text-orange-600" />
                 <p className="text-sm">
-                  Contactos WhatsApp hoje: <strong>{mockCurrentUser.whatsappContactsUsed}/{mockCurrentUser.maxDailyContacts}</strong>
-                  {!canContactToday && (
+                  Contactos WhatsApp hoje: <strong>{currentUser?.whatsappContactsToday || 0}/{currentUser?.isPremium ? 10 : 2}</strong>
+                  {currentUser && (currentUser.whatsappContactsToday >= (currentUser.isPremium ? 10 : 2)) && (
                     <span className="text-orange-600 ml-2">
                       Limite diário atingido. Tente novamente amanhã.
                     </span>
@@ -234,32 +378,75 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
             <div>
               <h3 className="text-lg font-semibold mb-4">Parceiros Compatíveis</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {mockUsers.map((user) => (
+                {searchUsers.length > 0 ? searchUsers.map((user) => (
                   <UserCard
                     key={user.id}
-                    {...user}
-                    canContact={canContactToday}
+                    id={user.id}
+                    name={`${user.firstName} ${user.lastName}`}
+                    sector={user.sector}
+                    salaryLevel={user.salaryLevel}
+                    grade={user.grade}
+                    currentLocation={`${user.currentProvince}, ${user.currentDistrict}`}
+                    desiredLocation={`${user.desiredProvince}, ${user.desiredDistrict}`}
+                    rating={user.rating || 0}
+                    reviewCount={user.reviewCount || 0}
+                    isPriorityMatch={false}
+                    canContact={currentUser ? (currentUser.whatsappContactsToday < (currentUser.isPremium ? 10 : 2)) : false}
                     onWhatsAppContact={handleWhatsAppContact}
                     onReport={handleReportUser}
                     onRate={handleRateUser}
                   />
-                ))}
+                )) : (
+                  <p className="text-center text-muted-foreground col-span-2">
+                    Nenhum parceiro encontrado com os filtros aplicados.
+                  </p>
+                )}
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="profile" className="space-y-6">
-            {/* Profile Edit Warning */}
-            {!canEditProfile() && (
-              <Card className="p-4 bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800">
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-yellow-600" />
-                  <p className="text-sm">
-                    Só pode editar o perfil uma vez a cada 6 meses ou até 1 semana após o cadastro.
+            {/* Profile Photo Section */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-6">Fotografia do Perfil</h3>
+              <div className="flex items-center gap-6">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage src={profileData.avatarUrl} alt={currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : ""} />
+                  <AvatarFallback className="text-lg">
+                    {currentUser ? `${currentUser.firstName[0]}${currentUser.lastName[0]}` : ""}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Adicione uma fotografia ao seu perfil para melhor identificação
                   </p>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <label htmlFor="photo-upload" className="cursor-pointer">
+                        <Camera className="h-4 w-4 mr-2" />
+                        Alterar Foto
+                        <input
+                          id="photo-upload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handlePhotoUpload}
+                        />
+                      </label>
+                    </Button>
+                    {profileData.avatarUrl && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setProfileData(prev => ({ ...prev, avatarUrl: "" }))}
+                      >
+                        Remover
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </Card>
-            )}
+              </div>
+            </Card>
 
             {/* Profile Information */}
             <Card className="p-6">
@@ -268,39 +455,67 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Nome</label>
+                    <label className="text-sm font-medium text-muted-foreground">Nome (não editável)</label>
                     <Input 
-                      value={mockCurrentUser.name} 
-                      disabled={!canEditProfile()}
+                      value={currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : ""} 
+                      disabled
                       data-testid="input-profile-name"
                     />
                   </div>
                   
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Sector</label>
+                    <label className="text-sm font-medium text-muted-foreground">Sector (não editável)</label>
                     <Input 
-                      value={mockCurrentUser.sector} 
-                      disabled={!canEditProfile()}
+                      value={currentUser?.sector || ""} 
+                      disabled
                       data-testid="input-profile-sector"
                     />
                   </div>
                   
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Nível Salarial</label>
-                    <Input 
-                      value={`${mockCurrentUser.salaryLevel}${mockCurrentUser.grade}`} 
-                      disabled={!canEditProfile()}
-                      data-testid="input-profile-level"
-                    />
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Nível Salarial {!canEditSalaryLevel() && "(editável de 2 em 2 anos)"}
+                    </label>
+                    <div className="flex gap-2">
+                      <Input 
+                        type="number"
+                        min="1"
+                        max="21"
+                        value={profileData.salaryLevel} 
+                        disabled={!canEditSalaryLevel()}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, salaryLevel: parseInt(e.target.value) }))}
+                        data-testid="input-profile-salary-level"
+                        className="flex-1"
+                      />
+                      <Select 
+                        value={profileData.grade}
+                        onValueChange={(value) => setProfileData(prev => ({ ...prev, grade: value }))}
+                        disabled={!canEditSalaryLevel()}
+                      >
+                        <SelectTrigger className="w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="A">A</SelectItem>
+                          <SelectItem value="B">B</SelectItem>
+                          <SelectItem value="C">C</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {!canEditSalaryLevel() && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Próxima edição disponível em: [data calculada]
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Telefone</label>
+                    <label className="text-sm font-medium text-muted-foreground">Contacto WhatsApp (não editável)</label>
                     <Input 
-                      value={mockCurrentUser.phone} 
-                      disabled={!canEditProfile()}
+                      value={currentUser?.phone || ""} 
+                      disabled
                       data-testid="input-profile-phone"
                     />
                   </div>
@@ -308,39 +523,281 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">E-mail</label>
                     <Input 
-                      value={mockCurrentUser.email} 
-                      disabled={!canEditProfile()}
+                      value={currentUser?.email || ""} 
+                      disabled
                       data-testid="input-profile-email"
                     />
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Localização Actual</label>
-                    <Input 
-                      value={mockCurrentUser.currentLocation} 
-                      disabled={!canEditProfile()}
-                      data-testid="input-profile-current-location"
-                    />
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">
+                        Província Actual {!canEditCurrentLocation() && "(editável apenas uma vez)"}
+                      </label>
+                      <Select 
+                        value={profileData.currentProvince} 
+                        onValueChange={(value) => {
+                          setProfileData(prev => ({ 
+                            ...prev, 
+                            currentProvince: value,
+                            currentDistrict: "" // Reset district when province changes
+                          }));
+                        }}
+                        disabled={!canEditCurrentLocation()}
+                      >
+                        <SelectTrigger data-testid="select-profile-current-province">
+                          <SelectValue placeholder="Selecione a província" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.keys(mozambiqueData).map((province) => (
+                            <SelectItem key={province} value={province}>
+                              {province}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">
+                        Distrito Actual {!canEditCurrentLocation() && "(editável apenas uma vez)"}
+                      </label>
+                      <Select 
+                        value={profileData.currentDistrict} 
+                        onValueChange={(value) => setProfileData(prev => ({ ...prev, currentDistrict: value }))}
+                        disabled={!canEditCurrentLocation() || !profileData.currentProvince}
+                      >
+                        <SelectTrigger data-testid="select-profile-current-district">
+                          <SelectValue placeholder="Selecione o distrito" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getCurrentDistricts(profileData.currentProvince).map((district) => (
+                            <SelectItem key={district} value={district}>
+                              {district}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {!canEditCurrentLocation() && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Localização já foi alterada
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6">
-                <label className="text-sm font-medium text-muted-foreground">Localização Pretendida</label>
-                <Input 
-                  value={mockCurrentUser.desiredLocation} 
-                  disabled={!canEditProfile()}
-                  data-testid="input-profile-desired-location"
-                />
+              <div className="mt-6 space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Província Pretendida 
+                    {currentUser?.isPremium ? " (editável uma vez por dia)" : " (editável uma vez por mês)"}
+                  </label>
+                  <Select 
+                    value={profileData.desiredProvince} 
+                    onValueChange={(value) => {
+                      setProfileData(prev => ({ 
+                        ...prev, 
+                        desiredProvince: value,
+                        desiredDistrict: "" // Reset district when province changes
+                      }));
+                    }}
+                    disabled={!canEditDesiredLocation()}
+                  >
+                    <SelectTrigger data-testid="select-profile-desired-province">
+                      <SelectValue placeholder="Selecione a província" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(mozambiqueData).map((province) => (
+                        <SelectItem key={province} value={province}>
+                          {province}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Distrito Pretendido 
+                    {currentUser?.isPremium ? " (editável uma vez por dia)" : " (editável uma vez por mês)"}
+                  </label>
+                  <Select 
+                    value={profileData.desiredDistrict} 
+                    onValueChange={(value) => setProfileData(prev => ({ ...prev, desiredDistrict: value }))}
+                    disabled={!canEditDesiredLocation() || !profileData.desiredProvince}
+                  >
+                    <SelectTrigger data-testid="select-profile-desired-district">
+                      <SelectValue placeholder="Selecione o distrito" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getCurrentDistricts(profileData.desiredProvince).map((district) => (
+                        <SelectItem key={district} value={district}>
+                          {district}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!canEditDesiredLocation() && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {currentUser?.isPremium 
+                        ? "Próxima edição disponível amanhã" 
+                        : "Próxima edição disponível em: [data calculada]"
+                      }
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {canEditProfile() && (
-                <div className="mt-6">
-                  <Button data-testid="button-save-profile">
-                    Guardar Alterações
-                  </Button>
+              <div className="mt-6">
+                <Button data-testid="button-save-profile">
+                  Guardar Alterações
+                </Button>
+              </div>
+            </Card>
+
+            {/* Password Change Section */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Alterar Palavra-passe</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Alterações hoje: 0/3
+              </p>
+              
+              {!showPasswordForm ? (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowPasswordForm(true)}
+                  disabled={!canChangePassword()}
+                  data-testid="button-change-password"
+                >
+                  Alterar Palavra-passe
+                </Button>
+              ) : (
+                <div className="space-y-4">
+                  <div className="relative">
+                    <label className="text-sm font-medium">Palavra-passe Actual</label>
+                    <div className="relative">
+                      <Input 
+                        type={showPasswords.current ? "text" : "password"}
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                        data-testid="input-current-password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3"
+                        onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
+                      >
+                        {showPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="relative">
+                    <label className="text-sm font-medium">Nova Palavra-passe</label>
+                    <div className="relative">
+                      <Input 
+                        type={showPasswords.new ? "text" : "password"}
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                        data-testid="input-new-password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3"
+                        onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
+                      >
+                        {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="relative">
+                    <label className="text-sm font-medium">Confirmar Nova Palavra-passe</label>
+                    <div className="relative">
+                      <Input 
+                        type={showPasswords.confirm ? "text" : "password"}
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                        data-testid="input-confirm-password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3"
+                        onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
+                      >
+                        {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button onClick={handlePasswordChange} data-testid="button-save-password">
+                      Guardar Nova Palavra-passe
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowPasswordForm(false)}
+                      data-testid="button-cancel-password"
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
                 </div>
               )}
+              
+              {!canChangePassword() && (
+                <p className="text-sm text-red-600 mt-2">
+                  Limite de alterações diárias atingido. Tente novamente amanhã.
+                </p>
+              )}
+            </Card>
+
+            {/* Account Security Section */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4 text-red-600">Zona de Perigo</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800">
+                  <div>
+                    <h4 className="font-medium">Suspender Conta</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Desactiva temporariamente a sua conta. Pode reactivá-la posteriormente.
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSuspendAccount}
+                    data-testid="button-suspend-account"
+                  >
+                    <Pause className="h-4 w-4 mr-2" />
+                    Suspender
+                  </Button>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 border rounded-lg border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800">
+                  <div>
+                    <h4 className="font-medium">Eliminar Conta</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Remove permanentemente a sua conta e todos os dados. Esta acção não pode ser desfeita.
+                    </p>
+                  </div>
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleDeleteAccount}
+                    data-testid="button-delete-account"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar
+                  </Button>
+                </div>
+              </div>
             </Card>
 
             {/* Account Statistics */}
@@ -354,13 +811,13 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
               <Card className="p-4 text-center">
                 <MessageCircle className="h-8 w-8 mx-auto text-green-600 mb-2" />
                 <p className="text-sm text-muted-foreground">Contactos hoje</p>
-                <p className="font-semibold">{mockCurrentUser.whatsappContactsUsed}/{mockCurrentUser.maxDailyContacts}</p>
+                <p className="font-semibold">{currentUser?.whatsappContactsToday || 0}/{currentUser?.isPremium ? 10 : 2}</p>
               </Card>
               
               <Card className="p-4 text-center">
                 <Shield className="h-8 w-8 mx-auto text-orange-600 mb-2" />
                 <p className="text-sm text-muted-foreground">Tipo de conta</p>
-                <p className="font-semibold">{mockCurrentUser.isPremium ? "Premium" : "Gratuito"}</p>
+                <p className="font-semibold">{currentUser?.isPremium ? "Premium" : "Gratuito"}</p>
               </Card>
             </div>
           </TabsContent>

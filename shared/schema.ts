@@ -58,6 +58,18 @@ export const ratings = pgTable("ratings", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Location history table
+export const locationHistory = pgTable("location_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: text("user_id").notNull(),
+  type: text("type").notNull(), // 'current' or 'desired'
+  oldProvince: text("old_province"),
+  oldDistrict: text("old_district"),
+  newProvince: text("new_province").notNull(),
+  newDistrict: text("new_district").notNull(),
+  editedAt: timestamp("edited_at").defaultNow(),
+});
+
 // Schema for user registration
 export const insertUserSchema = createInsertSchema(users).pick({
   firstName: true,
