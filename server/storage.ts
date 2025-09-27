@@ -7,6 +7,7 @@ import { z } from "zod";
 export type User = typeof users.$inferSelect;
 export type NewUser = z.infer<typeof insertUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
+export type InsertUser = typeof users.$inferInsert;
 
 // Location edit history table
 export const locationHistory = {

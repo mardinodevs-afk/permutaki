@@ -41,6 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/register", async (req, res) => {
     try {
+      console.log('Registration request received:', req.body);
       const userData = insertUserSchema.parse(req.body);
       
       // Check if user already exists
@@ -81,6 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/login", async (req, res) => {
     try {
+      console.log('Login request received for phone:', req.body.phone);
       const { phone, password } = loginUserSchema.parse(req.body);
       
       const user = await storage.getUserByPhone(phone);
