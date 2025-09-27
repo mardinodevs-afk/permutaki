@@ -62,9 +62,9 @@ interface UserDashboardProps {
 
 export default function UserDashboard({ onLogout }: UserDashboardProps) {
   const [searchFilters, setSearchFilters] = useState({
-    sector: "",
-    currentProvince: "",
-    desiredProvince: ""
+    sector: "all-sectors",
+    currentProvince: "all-provinces",
+    desiredProvince: "all-provinces"
   });
 
   const handleWhatsAppContact = (userId: string) => {
@@ -178,7 +178,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                       <SelectValue placeholder="Todos os sectores" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos os sectores</SelectItem>
+                      <SelectItem value="all-sectors">Todos os sectores</SelectItem>
                       {sectors.map((sector) => (
                         <SelectItem key={sector} value={sector}>
                           {sector}
@@ -198,7 +198,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                       <SelectValue placeholder="Todas as províncias" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas as províncias</SelectItem>
+                      <SelectItem value="all-provinces">Todas as províncias</SelectItem>
                       {Object.keys(mozambiqueData).map((province) => (
                         <SelectItem key={province} value={province}>
                           {province}
@@ -218,7 +218,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                       <SelectValue placeholder="Todas as províncias" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas as províncias</SelectItem>
+                      <SelectItem value="all-provinces">Todas as províncias</SelectItem>
                       {Object.keys(mozambiqueData).map((province) => (
                         <SelectItem key={province} value={province}>
                           {province}
