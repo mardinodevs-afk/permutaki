@@ -1,4 +1,3 @@
-
 import { eq, and, sql } from "drizzle-orm";
 import { db } from "./db";
 import { users, reports, ratings } from "@shared/schema";
@@ -23,9 +22,21 @@ export const locationHistory = {
 
 export const storage = {
   // User operations
-  async insertUser(userData: NewUser): Promise<User> {
-    const [user] = await db.insert(users).values(userData).returning();
-    return user;
+  async insertUser(userData: Omit<InsertUser, "id" | "createdAt"> & { 
+    isAdmin?: boolean; 
+    isPremium?: boolean; 
+    isActive?: boolean; 
+  }): Promise<User> {
+    try {
+      const [newUser] = await db.insert(users).values({
+        ...userData,
+      }).returning();
+
+      return newUser;
+    } catch (error) {
+      console.error("Error inserting user:", error);
+      throw error;
+    }
   },
 
   async getUserByPhone(phone: string): Promise<User | null> {
@@ -61,7 +72,7 @@ export const storage = {
     // Check if user can update location based on their plan and last update
     const now = new Date();
     const canUpdate = await this.canUpdateLocation(userId, type, user.isPremium || false);
-    
+
     if (!canUpdate.allowed) {
       return { success: false, message: canUpdate.reason };
     }
@@ -96,7 +107,7 @@ export const storage = {
     // Desired location rules
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
+
     const oneDayAgo = new Date();
     oneDayAgo.setDate(oneDayAgo.getDate() - 1);
 
