@@ -504,7 +504,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                     </div>
                     {!canEditSalaryLevel() && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Próxima edição disponível em: {new Date(mockCurrentUser.lastSalaryUpdate.getTime() + 2 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                        Próxima edição disponível em: [data calculada]
                       </p>
                     )}
                   </div>
@@ -592,7 +592,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">
                     Província Pretendida 
-                    {mockCurrentUser.isPremium ? " (editável uma vez por dia)" : " (editável uma vez por mês)"}
+                    {currentUser?.isPremium ? " (editável uma vez por dia)" : " (editável uma vez por mês)"}
                   </label>
                   <Select 
                     value={profileData.desiredProvince} 
@@ -621,7 +621,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">
                     Distrito Pretendido 
-                    {mockCurrentUser.isPremium ? " (editável uma vez por dia)" : " (editável uma vez por mês)"}
+                    {currentUser?.isPremium ? " (editável uma vez por dia)" : " (editável uma vez por mês)"}
                   </label>
                   <Select 
                     value={profileData.desiredDistrict} 
@@ -641,9 +641,9 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                   </Select>
                   {!canEditDesiredLocation() && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      {mockCurrentUser.isPremium 
+                      {currentUser?.isPremium 
                         ? "Próxima edição disponível amanhã" 
-                        : `Próxima edição disponível em: ${new Date(mockCurrentUser.lastDesiredLocationUpdate.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}`
+                        : "Próxima edição disponível em: [data calculada]"
                       }
                     </p>
                   )}
@@ -661,7 +661,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Alterar Palavra-passe</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Alterações hoje: {mockCurrentUser.passwordChangesToday}/{mockCurrentUser.maxPasswordChangesPerDay}
+                Alterações hoje: 0/3
               </p>
               
               {!showPasswordForm ? (
