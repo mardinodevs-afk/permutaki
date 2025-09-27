@@ -2,10 +2,13 @@ import { useState } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Route, Switch } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import LandingPage from "@/components/LandingPage";
 import UserDashboard from "@/components/UserDashboard";
 import AdminDashboard from "@/components/AdminDashboard";
+import TermsOfService from "@/pages/TermsOfService";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
 
 // todo: remove mock functionality - user authentication state
 type User = {
@@ -120,15 +123,25 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {currentUser ? (
-          currentUser.isAdmin ? (
-            <AdminDashboard onLogout={handleLogout} />
-          ) : (
-            <UserDashboard onLogout={handleLogout} />
-          )
-        ) : (
-          <LandingPage onLogin={handleLogin} onRegister={handleRegister} />
-        )}
+        <Switch>
+          <Route path="/terms">
+            <TermsOfService />
+          </Route>
+          <Route path="/privacy">
+            <PrivacyPolicy />
+          </Route>
+          <Route>
+            {currentUser ? (
+              currentUser.isAdmin ? (
+                <AdminDashboard onLogout={handleLogout} />
+              ) : (
+                <UserDashboard onLogout={handleLogout} />
+              )
+            ) : (
+              <LandingPage onLogin={handleLogin} onRegister={handleRegister} />
+            )}
+          </Route>
+        </Switch>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

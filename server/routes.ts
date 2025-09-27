@@ -267,6 +267,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Feedback routes
+  app.post("/api/feedback", authenticateToken, async (req: any, res) => {
+    try {
+      const { type, subject, message, email, name } = req.body;
+      
+      if (!type || !message) {
+        return res.status(400).json({ message: 'Tipo e mensagem são obrigatórios' });
+      }
+
+      // Log feedback for now (in a real app, you'd save to database)
+      console.log('Feedback recebido:', {
+        userId: req.user.id,
+        type,
+        subject,
+        message,
+        email,
+        name,
+        timestamp: new Date()
+      });
+
+      res.json({ message: 'Feedback enviado com sucesso' });
+    } catch (error) {
+      console.error('Erro ao processar feedback:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
   // Admin routes
   app.get("/api/admin/users", authenticateToken, requireAdmin, async (req: any, res) => {
     try {
