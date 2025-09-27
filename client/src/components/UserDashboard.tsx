@@ -6,7 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LogOut, Search, User, MessageCircle, Calendar, Shield, Camera, Eye, EyeOff, Trash2, Pause } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { LogOut, Search, User, MessageCircle, Calendar, Shield, Camera, Eye, EyeOff, Trash2, Pause, HelpCircle, Send } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import UserCard from "./UserCard";
 import ThemeToggle from "./ThemeToggle";
@@ -59,6 +61,16 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
     currentProvince: "all-provinces",
     desiredProvince: "all-provinces"
   });
+
+  const [feedbackForm, setFeedbackForm] = useState({
+    type: "",
+    subject: "",
+    message: "",
+    email: "",
+    name: ""
+  });
+
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   const [profileData, setProfileData] = useState({
     salaryLevel: 15,
@@ -281,7 +293,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
 
       <div className="max-w-6xl mx-auto p-6">
         <Tabs defaultValue="search" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="search" data-testid="tab-search">
               <Search className="h-4 w-4 mr-2" />
               Pesquisar Parceiros
@@ -289,6 +301,10 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
             <TabsTrigger value="profile" data-testid="tab-profile">
               <User className="h-4 w-4 mr-2" />
               Meu Perfil
+            </TabsTrigger>
+            <TabsTrigger value="support" data-testid="tab-support">
+              <HelpCircle className="h-4 w-4 mr-2" />
+              Suporte & Feedback
             </TabsTrigger>
           </TabsList>
 
@@ -820,6 +836,165 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                 <p className="font-semibold">{currentUser?.isPremium ? "Premium" : "Gratuito"}</p>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="support" className="space-y-6">
+            {/* Support Links */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Links de Apoio</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 border rounded-lg hover-elevate cursor-pointer">
+                  <HelpCircle className="h-8 w-8 mx-auto text-primary mb-2" />
+                  <h4 className="font-medium mb-2">Centro de Ajuda</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Perguntas frequentes e guias de uso
+                  </p>
+                  <Button variant="outline" size="sm" data-testid="button-help-center">
+                    Aceder
+                  </Button>
+                </div>
+                
+                <div className="text-center p-4 border rounded-lg hover-elevate cursor-pointer">
+                  <Shield className="h-8 w-8 mx-auto text-primary mb-2" />
+                  <h4 className="font-medium mb-2">Termos de Uso</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Condições de utilização da plataforma
+                  </p>
+                  <Button variant="outline" size="sm" data-testid="button-terms">
+                    Ver Termos
+                  </Button>
+                </div>
+                
+                <div className="text-center p-4 border rounded-lg hover-elevate cursor-pointer">
+                  <Eye className="h-8 w-8 mx-auto text-primary mb-2" />
+                  <h4 className="font-medium mb-2">Política de Privacidade</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Como protegemos os seus dados
+                  </p>
+                  <Button variant="outline" size="sm" data-testid="button-privacy">
+                    Ver Política
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            {/* Feedback Form */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Enviar Feedback</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                A sua opinião é importante para nós. Partilhe testemunhos, sugestões, críticas ou propostas de parcerias.
+              </p>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="feedback-type">Tipo de Feedback</Label>
+                  <Select 
+                    value={feedbackForm.type} 
+                    onValueChange={(value) => setFeedbackForm(prev => ({ ...prev, type: value }))}
+                  >
+                    <SelectTrigger data-testid="select-feedback-type">
+                      <SelectValue placeholder="Seleccione o tipo de feedback" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="testimony">Testemunho</SelectItem>
+                      <SelectItem value="suggestion">Sugestão</SelectItem>
+                      <SelectItem value="criticism">Crítica Construtiva</SelectItem>
+                      <SelectItem value="partnership">Proposta de Parceria</SelectItem>
+                      <SelectItem value="bug">Reportar Problema</SelectItem>
+                      <SelectItem value="other">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="feedback-name">Nome (opcional)</Label>
+                    <Input
+                      id="feedback-name"
+                      value={feedbackForm.name}
+                      onChange={(e) => setFeedbackForm(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="O seu nome"
+                      data-testid="input-feedback-name"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="feedback-email">Email (opcional)</Label>
+                    <Input
+                      id="feedback-email"
+                      type="email"
+                      value={feedbackForm.email}
+                      onChange={(e) => setFeedbackForm(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="exemplo@email.com"
+                      data-testid="input-feedback-email"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="feedback-subject">Assunto</Label>
+                  <Input
+                    id="feedback-subject"
+                    value={feedbackForm.subject}
+                    onChange={(e) => setFeedbackForm(prev => ({ ...prev, subject: e.target.value }))}
+                    placeholder="Resumo do seu feedback"
+                    data-testid="input-feedback-subject"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="feedback-message">Mensagem</Label>
+                  <Textarea
+                    id="feedback-message"
+                    value={feedbackForm.message}
+                    onChange={(e) => setFeedbackForm(prev => ({ ...prev, message: e.target.value }))}
+                    placeholder="Descreva o seu feedback em detalhe..."
+                    rows={6}
+                    data-testid="textarea-feedback-message"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setFeedbackForm({ type: "", subject: "", message: "", email: "", name: "" })}
+                    data-testid="button-clear-feedback"
+                  >
+                    Limpar
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      console.log("Feedback enviado:", feedbackForm);
+                      alert("Obrigado pelo seu feedback! A sua mensagem foi enviada com sucesso.");
+                      setFeedbackForm({ type: "", subject: "", message: "", email: "", name: "" });
+                    }}
+                    disabled={!feedbackForm.type || !feedbackForm.message || isSubmittingFeedback}
+                    data-testid="button-submit-feedback"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    {isSubmittingFeedback ? "Enviando..." : "Enviar Feedback"}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            {/* Contact Information */}
+            <Card className="p-6 bg-muted/30">
+              <h3 className="text-lg font-semibold mb-4">Contactos Directos</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Pode também contactar-nos directamente através dos seguintes meios:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-primary" />
+                  <span>WhatsApp: +258 84/86 56 91 442</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Send className="h-4 w-4 text-primary" />
+                  <span>Email: mardino.vilanculo@outlook.com</span>
+                </div>
+              </div>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
