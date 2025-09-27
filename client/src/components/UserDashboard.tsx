@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -12,62 +12,48 @@ import UserCard from "./UserCard";
 import ThemeToggle from "./ThemeToggle";
 import { mozambiqueData, sectors } from "@shared/mozambique-data";
 
-// todo: remove mock functionality
-const mockCurrentUser = {
-  id: "current-user",
-  name: "João Silva",
-  sector: "Educação",
-  salaryLevel: 15,
-  grade: "B",
-  currentLocation: "Maputo, Matola",
-  desiredLocation: "Nampula, Nacala",
-  phone: "+258 84 123 4567",
-  email: "joao@email.com",
-  avatarUrl: "",
-  whatsappContactsUsed: 1,
-  maxDailyContacts: 2,
-  lastProfileUpdate: new Date("2024-01-15"),
-  lastLocationUpdate: new Date("2023-12-01"),
-  lastDesiredLocationUpdate: new Date("2024-01-01"),
-  lastSalaryUpdate: new Date("2022-01-01"),
-  passwordChangesToday: 1,
-  maxPasswordChangesPerDay: 3,
-  isPremium: false
-};
+interface CurrentUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  sector: string;
+  salaryLevel: number;
+  grade: string;
+  currentProvince: string;
+  currentDistrict: string;
+  desiredProvince: string;
+  desiredDistrict: string;
+  phone: string;
+  email: string;
+  isPremium: boolean;
+  isAdmin: boolean;
+  whatsappContactsToday: number;
+}
 
-// todo: remove mock functionality
-const mockUsers = [
-  {
-    id: "user1",
-    name: "Maria Santos",
-    sector: "Educação", 
-    salaryLevel: 15,
-    grade: "B",
-    currentLocation: "Nampula, Nacala",
-    desiredLocation: "Maputo, Matola",
-    rating: 4.8,
-    reviewCount: 15,
-    isPriorityMatch: true
-  },
-  {
-    id: "user2", 
-    name: "Carlos Machel",
-    sector: "Educação",
-    salaryLevel: 15,
-    grade: "A",
-    currentLocation: "Nampula, Cidade",
-    desiredLocation: "Maputo, KaMpfumo",
-    rating: 4.2,
-    reviewCount: 8,
-    isPriorityMatch: false
-  }
-];
+interface SearchUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  sector: string;
+  salaryLevel: number;
+  grade: string;
+  currentProvince: string;
+  currentDistrict: string;
+  desiredProvince: string;
+  desiredDistrict: string;
+  rating?: number;
+  reviewCount?: number;
+}
 
 interface UserDashboardProps {
   onLogout: () => void;
 }
 
 export default function UserDashboard({ onLogout }: UserDashboardProps) {
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [searchUsers, setSearchUsers] = useState<SearchUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [searchFilters, setSearchFilters] = useState({
     sector: "all-sectors",
     currentProvince: "all-provinces",
@@ -75,14 +61,88 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
   });
 
   const [profileData, setProfileData] = useState({
-    salaryLevel: mockCurrentUser.salaryLevel,
-    grade: mockCurrentUser.grade,
-    currentProvince: "Maputo Cidade",
-    currentDistrict: "Matola",
-    desiredProvince: "Nampula",
-    desiredDistrict: "Nacala",
-    avatarUrl: mockCurrentUser.avatarUrl
+    salaryLevel: 15,
+    grade: "B",
+    currentProvince: "",
+    currentDistrict: "",
+    desiredProvince: "",
+    desiredDistrict: "",
+    avatarUrl: ""
   });
+
+  // Load user data on component mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch('/api/user/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setCurrentUser(userData);
+          setProfileData({
+            salaryLevel: userData.salaryLevel,
+            grade: userData.grade,
+            currentProvince: userData.currentProvince,
+            currentDistrict: userData.currentDistrict,
+            desiredProvince: userData.desiredProvince,
+            desiredDistrict: userData.desiredDistrict,
+            avatarUrl: ""
+          });
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, []);
+
+  // Load search results
+  useEffect(() => {
+    const loadSearchUsers = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const params = new URLSearchParams();
+        if (searchFilters.sector !== "all-sectors") {
+          params.append('sector', searchFilters.sector);
+        }
+        if (searchFilters.currentProvince !== "all-provinces") {
+          params.append('currentProvince', searchFilters.currentProvince);
+        }
+        if (searchFilters.desiredProvince !== "all-provinces") {
+          params.append('desiredProvince', searchFilters.desiredProvince);
+        }
+
+        const response = await fetch(`/api/users/search?${params}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const users = await response.json();
+          setSearchUsers(users);
+        }
+      } catch (error) {
+        console.error('Error loading search users:', error);
+      }
+    };
+
+    if (currentUser) {
+      loadSearchUsers();
+    }
+  }, [searchFilters, currentUser]);
 
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -158,32 +218,26 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
 
   // Validation functions
   const canEditSalaryLevel = () => {
-    const twoYearsAgo = new Date();
-    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-    return mockCurrentUser.lastSalaryUpdate < twoYearsAgo;
+    // For now, allow editing (would need to implement last update tracking)
+    return true;
   };
 
   const canEditCurrentLocation = () => {
-    return !mockCurrentUser.lastLocationUpdate || mockCurrentUser.lastLocationUpdate < new Date("2024-01-01");
+    // For now, allow editing (would need to implement tracking)
+    return true;
   };
 
   const canEditDesiredLocation = () => {
-    if (mockCurrentUser.isPremium) {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      return !mockCurrentUser.lastDesiredLocationUpdate || mockCurrentUser.lastDesiredLocationUpdate < yesterday;
-    } else {
-      const oneMonthAgo = new Date();
-      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-      return !mockCurrentUser.lastDesiredLocationUpdate || mockCurrentUser.lastDesiredLocationUpdate < oneMonthAgo;
-    }
+    // For now, allow editing (would need to implement tracking)
+    return true;
   };
 
   const canChangePassword = () => {
-    return mockCurrentUser.passwordChangesToday < mockCurrentUser.maxPasswordChangesPerDay;
+    // For now, allow 3 changes per day (would need to implement tracking)
+    return true;
   };
 
-  const canContactToday = mockCurrentUser.whatsappContactsUsed < mockCurrentUser.maxDailyContacts;
+  const canContactToday = currentUser ? (currentUser.whatsappContactsToday < (currentUser.isPremium ? 10 : 2)) : false;
 
   const getCurrentDistricts = (province: string) => {
     return province ? mozambiqueData[province as keyof typeof mozambiqueData] || [] : [];
@@ -201,10 +255,12 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
           
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="font-medium text-foreground">{mockCurrentUser.name}</p>
+              <p className="font-medium text-foreground">
+                {currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "Carregando..."}
+              </p>
               <div className="flex items-center gap-2">
-                <Badge variant={mockCurrentUser.isPremium ? "default" : "secondary"}>
-                  {mockCurrentUser.isPremium ? "Premium" : "Gratuito"}
+                <Badge variant={currentUser?.isPremium ? "default" : "secondary"}>
+                  {currentUser?.isPremium ? "Premium" : "Gratuito"}
                 </Badge>
               </div>
             </div>
@@ -242,8 +298,8 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4 text-orange-600" />
                 <p className="text-sm">
-                  Contactos WhatsApp hoje: <strong>{mockCurrentUser.whatsappContactsUsed}/{mockCurrentUser.maxDailyContacts}</strong>
-                  {!canContactToday && (
+                  Contactos WhatsApp hoje: <strong>{currentUser?.whatsappContactsToday || 0}/{currentUser?.isPremium ? 10 : 2}</strong>
+                  {currentUser && (currentUser.whatsappContactsToday >= (currentUser.isPremium ? 10 : 2)) && (
                     <span className="text-orange-600 ml-2">
                       Limite diário atingido. Tente novamente amanhã.
                     </span>
@@ -322,16 +378,29 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
             <div>
               <h3 className="text-lg font-semibold mb-4">Parceiros Compatíveis</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {mockUsers.map((user) => (
+                {searchUsers.length > 0 ? searchUsers.map((user) => (
                   <UserCard
                     key={user.id}
-                    {...user}
-                    canContact={canContactToday}
+                    id={user.id}
+                    name={`${user.firstName} ${user.lastName}`}
+                    sector={user.sector}
+                    salaryLevel={user.salaryLevel}
+                    grade={user.grade}
+                    currentLocation={`${user.currentProvince}, ${user.currentDistrict}`}
+                    desiredLocation={`${user.desiredProvince}, ${user.desiredDistrict}`}
+                    rating={user.rating || 0}
+                    reviewCount={user.reviewCount || 0}
+                    isPriorityMatch={false}
+                    canContact={currentUser ? (currentUser.whatsappContactsToday < (currentUser.isPremium ? 10 : 2)) : false}
                     onWhatsAppContact={handleWhatsAppContact}
                     onReport={handleReportUser}
                     onRate={handleRateUser}
                   />
-                ))}
+                )) : (
+                  <p className="text-center text-muted-foreground col-span-2">
+                    Nenhum parceiro encontrado com os filtros aplicados.
+                  </p>
+                )}
               </div>
             </div>
           </TabsContent>
@@ -342,9 +411,9 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
               <h3 className="text-lg font-semibold mb-6">Fotografia do Perfil</h3>
               <div className="flex items-center gap-6">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={profileData.avatarUrl} alt={mockCurrentUser.name} />
+                  <AvatarImage src={profileData.avatarUrl} alt={currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : ""} />
                   <AvatarFallback className="text-lg">
-                    {mockCurrentUser.name.split(' ').map(n => n[0]).join('')}
+                    {currentUser ? `${currentUser.firstName[0]}${currentUser.lastName[0]}` : ""}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -388,7 +457,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Nome (não editável)</label>
                     <Input 
-                      value={mockCurrentUser.name} 
+                      value={currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : ""} 
                       disabled
                       data-testid="input-profile-name"
                     />
@@ -397,7 +466,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Sector (não editável)</label>
                     <Input 
-                      value={mockCurrentUser.sector} 
+                      value={currentUser?.sector || ""} 
                       disabled
                       data-testid="input-profile-sector"
                     />
@@ -445,7 +514,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Contacto WhatsApp (não editável)</label>
                     <Input 
-                      value={mockCurrentUser.phone} 
+                      value={currentUser?.phone || ""} 
                       disabled
                       data-testid="input-profile-phone"
                     />
@@ -454,7 +523,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">E-mail</label>
                     <Input 
-                      value={mockCurrentUser.email} 
+                      value={currentUser?.email || ""} 
                       disabled
                       data-testid="input-profile-email"
                     />
@@ -742,13 +811,13 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
               <Card className="p-4 text-center">
                 <MessageCircle className="h-8 w-8 mx-auto text-green-600 mb-2" />
                 <p className="text-sm text-muted-foreground">Contactos hoje</p>
-                <p className="font-semibold">{mockCurrentUser.whatsappContactsUsed}/{mockCurrentUser.maxDailyContacts}</p>
+                <p className="font-semibold">{currentUser?.whatsappContactsToday || 0}/{currentUser?.isPremium ? 10 : 2}</p>
               </Card>
               
               <Card className="p-4 text-center">
                 <Shield className="h-8 w-8 mx-auto text-orange-600 mb-2" />
                 <p className="text-sm text-muted-foreground">Tipo de conta</p>
-                <p className="font-semibold">{mockCurrentUser.isPremium ? "Premium" : "Gratuito"}</p>
+                <p className="font-semibold">{currentUser?.isPremium ? "Premium" : "Gratuito"}</p>
               </Card>
             </div>
           </TabsContent>

@@ -143,6 +143,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/users/search", authenticateToken, async (req: any, res) => {
+    try {
+      const { sector, currentProvince, desiredProvince } = req.query;
+      const currentUserId = req.user.id;
+      
+      let users = await storage.getAllUsers();
+      
+      // Filter out current user
+      users = users.filter(user => user.id !== currentUserId && user.isActive);
+      
+      // Apply filters
+      if (sector) {
+        users = users.filter(user => user.sector === sector);
+      }
+      
+      if (currentProvince) {
+        users = users.filter(user => user.currentProvince === currentProvince);
+      }
+      
+      if (desiredProvince) {
+        users = users.filter(user => user.desiredProvince === desiredProvince);
+      }
+      
+      // Return filtered users
+      const filteredUsers = users.map(user => ({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        sector: user.sector,
+        salaryLevel: user.salaryLevel,
+        grade: user.grade,
+        currentProvince: user.currentProvince,
+        currentDistrict: user.currentDistrict,
+        desiredProvince: user.desiredProvince,
+        desiredDistrict: user.desiredDistrict,
+        rating: 0, // TODO: Calculate from ratings table
+        reviewCount: 0 // TODO: Calculate from ratings table
+      }));
+      
+      res.json(filteredUsers);
+    } catch (error) {
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
   app.put("/api/user/location", authenticateToken, async (req: any, res) => {
     try {
       const { type, province, district } = req.body;

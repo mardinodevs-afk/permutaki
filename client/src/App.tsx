@@ -20,43 +20,97 @@ function App() {
 
   const handleLogin = async (phone: string, password: string) => {
     setIsLoading(true);
-    console.log("Login attempt:", { phone, password: "***" });
     
-    // todo: remove mock functionality - simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone, password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('token', data.token);
+        
+        // Get user profile
+        const profileResponse = await fetch('/api/user/profile', {
+          headers: {
+            'Authorization': `Bearer ${data.token}`,
+          },
+        });
+        
+        if (profileResponse.ok) {
+          const userData = await profileResponse.json();
+          const user: User = {
+            id: userData.id,
+            name: `${userData.firstName} ${userData.lastName}`,
+            phone: userData.phone,
+            isAdmin: userData.isAdmin || false
+          };
+          setCurrentUser(user);
+        }
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Erro ao fazer login');
+      }
+    } catch (error) {
+      alert('Erro de conexão');
+    }
     
-    // todo: remove mock functionality - mock user data
-    const mockUser: User = {
-      id: "user123",
-      name: "João Silva", 
-      phone: phone,
-      isAdmin: phone === "+258123456789" // Mock admin check
-    };
-    
-    setCurrentUser(mockUser);
     setIsLoading(false);
   };
 
   const handleRegister = async (data: any) => {
     setIsLoading(true);
-    console.log("Registration data:", data);
     
-    // todo: remove mock functionality - simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          sector: data.sector,
+          salaryLevel: parseInt(data.salaryLevel),
+          grade: data.grade,
+          currentProvince: data.currentProvince,
+          currentDistrict: data.currentDistrict,
+          desiredProvince: data.desiredProvince,
+          desiredDistrict: data.desiredDistrict,
+          phone: data.phone,
+          email: data.email,
+          password: data.password,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        localStorage.setItem('token', result.token);
+        
+        const user: User = {
+          id: result.user.id,
+          name: `${result.user.firstName} ${result.user.lastName}`,
+          phone: result.user.phone,
+          isAdmin: result.user.isAdmin || false
+        };
+        setCurrentUser(user);
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Erro ao criar conta');
+      }
+    } catch (error) {
+      alert('Erro de conexão');
+    }
     
-    // todo: remove mock functionality - mock user creation
-    const newUser: User = {
-      id: "new-user",
-      name: `${data.firstName} ${data.lastName}`,
-      phone: data.phone,
-      isAdmin: false
-    };
-    
-    setCurrentUser(newUser);
     setIsLoading(false);
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('token');
     setCurrentUser(null);
   };
 
