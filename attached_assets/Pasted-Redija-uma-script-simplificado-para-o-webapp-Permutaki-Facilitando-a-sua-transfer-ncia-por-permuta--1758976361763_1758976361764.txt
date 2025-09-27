@@ -1,0 +1,91 @@
+Redija uma script simplificado para o webapp "Permutaki-Facilitando a sua transferência por permuta"
+
+Crie um site chamado "Permutaki" para funcionários públicos de Moçambique que desejam fazer transferência por permuta. 
+
+O webapp deve ser respoonsivo para todos dispositivos moveis e ter as seguintes características:
+
+Estrutura:
+
+I. Landingpage(com cartões informativos, imagens de testemunhos de funcionários e cartões, no rodapé links para as paginas: Sobre Nós, Termos de Uso e Privacidade. 
+informacoes apelativas e dizendo que a Permuta é Grátis, denuncie e evite burlas, e frise que o sistema nao pertence ao estado para sim unma iniciativa pessoal e que necessita de apoio.
+Deve possuir tambem dois botões: "começar/criar conta e entrar" devem ativar os formulários modais de login ou de cadastro.
+
+Contactos de suporte: Telefone | Chamada |WhatsApp : +258 84/86 56 91 442 E-mail: mardino.vilanculo@outlook.com Facebook: facebook.com/permutAKI
+ 
+II.O Cadastro deve ser feito através de um formulário Formulário organizado dividido em paginas: 
+1.Dados Pessoais
+Nome *
+Seu primeiro nome
+Apelido *
+Seu sobrenome
+
+2.Dados Profissionais
+Sector *
+Selecione o sector
+
+Nível Salarial *
+Selecione o nível (1-21)
+
+Escalão *
+Selecione o escalão(A, B ou C) 
+
+3. Localização
+Localização Actual
+Província Actual *
+Selecione a província
+
+Distrito Atual *
+Selecione o distrito
+
+Localização Pretendida
+Província Pretendida *
+Selecione a província
+
+Distrito Pretendido *
+Selecione o distrito
+
+4. Contactos
+Telefone (WhatsApp) *
++258: 84 123 4567
+
+E-mail (opcional)
+seu@email.com
+
+5.Segurança
+Senha *
+Mínimo 8 caracteres
+Confirmar Senha *
+Repita a senha
+
+Concordo com os Termos de Uso e Política de Privacidade
+Criar Conta
+
+Províncias e distritos em formato de lista (incluir dados de Moçambique)
+Aceite dos termos de uso e confirmação de dados reais
+O Login  deve ser feito com número de telefone e senha
+
+III. Dashboard do usuário
+Perfil do Usuário:
+Exibição e edição das informações cadastradas 
+O usuario so pode editar as informações uma vez a cada 6 meses ou ate 1 semana apois o cadastro.
+Página de Pesquisa: Visível apenas para funcionários do mesmo sector e nível salarial
+No perfil compativel o contacto do WhatsApp deve ser exibido atravez de um ícone clicavel que leva acesso ao WhatsApp do mesmo. 
+Os usuário logados so podem ver os perfis do mesmo sector e localizacoes compativeis, este so deve clicar em dois contactos do WhatsApp por dia
+Prioridade para funcionários com distrito atual e pretendido iguais. 
+O usuário pode avaliar com estrelas ou denunciar outros usuários em caso de tentativa de burlas, fraude. 
+O usuario deve sinalizar caso consiga achar o perfil compatível ou quando conseguir concluir a permuta. 
+
+IV. Funcionalidades de Segurança:Login apenas para usuários cadastrados e confirmados
+Confirmação ao clicar em "Sair"
+Usuarios premium podem ter acesso a usuarios de outros niveis salariais
+Design:Cores principais: Azul, cinza, preto e branco com modo escuro e claro. 
+Layout responsivo, fluida e acessível e Facilmente editável
+
+V. Dashboard do administrador
+Somente acessivel apenas ao administrador do webapp com acesso a:
+2. informações sobre os usuários podendo fazer(promoção, despromoção, banimento, desativação de usuários temporária,... )
+3. Situação geral do app, usuários logados, cadastrados, permutas concluídas, pagina de gestao de denúncia dos usuários, informações tecnicas do app. 
+o perfil do administrador deve ser oculto para os demais, podendo existir perfis de agentes de suporte.
+Crie credenciais para admin a ser usados em formulário de login normal.
+
+as transicoes entre janelas deve ser fluida e animadas.
