@@ -115,11 +115,7 @@ function App() {
     setCurrentUser(null);
   };
 
-  // This function was not present in the original code, but it's used in the changes.
-  // Assuming it's meant to be called after a successful login.
-  const handleLoginSuccess = (userData: User) => {
-    setCurrentUser(userData);
-  };
+  
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -131,7 +127,7 @@ function App() {
             <UserDashboard onLogout={handleLogout} />
           )
         ) : (
-          <LandingPage onLoginSuccess={handleLoginSuccess} />
+          <LandingPage onLogin={handleLogin} onRegister={handleRegister} />
         )}
         <Toaster />
       </TooltipProvider>
