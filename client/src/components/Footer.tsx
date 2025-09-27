@@ -1,6 +1,9 @@
 import { Phone, Mail, Facebook } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Footer() {
+  const [, setLocation] = useLocation();
+
   return (
     <footer className="bg-card border-t border-border py-12">
       <div className="max-w-6xl mx-auto px-4">
@@ -78,14 +81,14 @@ export default function Footer() {
                 Sobre Nós
               </button>
               <button 
-                onClick={() => alert('Página em construção. Para mais informações, contacte-nos através dos meios disponíveis.')}
+                onClick={() => setLocation('/terms')}
                 className="block text-sm text-muted-foreground hover:text-primary cursor-pointer text-left"
                 data-testid="link-terms"
               >
                 Termos de Uso
               </button>
               <button 
-                onClick={() => alert('Página em construção. Para mais informações, contacte-nos através dos meios disponíveis.')}
+                onClick={() => setLocation('/privacy')}
                 className="block text-sm text-muted-foreground hover:text-primary cursor-pointer text-left"
                 data-testid="link-privacy"
               >

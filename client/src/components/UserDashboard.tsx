@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { LogOut, Search, User, MessageCircle, Calendar, Shield, Camera, Eye, EyeOff, Trash2, Pause, HelpCircle, Send } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useLocation } from "wouter";
 import UserCard from "./UserCard";
 import ThemeToggle from "./ThemeToggle";
 import { mozambiqueData, sectors } from "@shared/mozambique-data";
@@ -52,6 +53,7 @@ interface UserDashboardProps {
 }
 
 export default function UserDashboard({ onLogout }: UserDashboardProps) {
+  const [, setLocation] = useLocation();
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [searchUsers, setSearchUsers] = useState<SearchUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -860,7 +862,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                   <p className="text-sm text-muted-foreground mb-3">
                     Condições de utilização da plataforma
                   </p>
-                  <Button variant="outline" size="sm" data-testid="button-terms">
+                  <Button variant="outline" size="sm" onClick={() => setLocation('/terms')} data-testid="button-terms">
                     Ver Termos
                   </Button>
                 </div>
@@ -871,7 +873,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                   <p className="text-sm text-muted-foreground mb-3">
                     Como protegemos os seus dados
                   </p>
-                  <Button variant="outline" size="sm" data-testid="button-privacy">
+                  <Button variant="outline" size="sm" onClick={() => setLocation('/privacy')} data-testid="button-privacy">
                     Ver Política
                   </Button>
                 </div>
@@ -963,10 +965,29 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                     Limpar
                   </Button>
                   <Button 
-                    onClick={() => {
-                      console.log("Feedback enviado:", feedbackForm);
-                      alert("Obrigado pelo seu feedback! A sua mensagem foi enviada com sucesso.");
-                      setFeedbackForm({ type: "", subject: "", message: "", email: "", name: "" });
+                    onClick={async () => {
+                      setIsSubmittingFeedback(true);
+                      try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch('/api/feedback', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`,
+                          },
+                          body: JSON.stringify(feedbackForm),
+                        });
+                        
+                        if (response.ok) {
+                          alert("Obrigado pelo seu feedback! A sua mensagem foi enviada com sucesso.");
+                          setFeedbackForm({ type: "", subject: "", message: "", email: "", name: "" });
+                        } else {
+                          alert("Erro ao enviar feedback. Tente novamente.");
+                        }
+                      } catch (error) {
+                        alert("Erro de conexão. Tente novamente.");
+                      }
+                      setIsSubmittingFeedback(false);
                     }}
                     disabled={!feedbackForm.type || !feedbackForm.message || isSubmittingFeedback}
                     data-testid="button-submit-feedback"
