@@ -152,8 +152,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let users = await storage.getAllUsers();
       
-      // Filter out current user
-      users = users.filter(user => user.id !== currentUserId && user.isActive);
+      // Filter out current user, inactive users, and admin users
+      users = users.filter(user => user.id !== currentUserId && user.isActive && !user.isAdmin);
       
       // Apply filters
       if (sector) {
