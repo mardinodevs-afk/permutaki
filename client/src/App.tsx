@@ -9,6 +9,8 @@ import UserDashboard from "@/components/UserDashboard";
 import AdminDashboard from "@/components/AdminDashboard";
 import TermsOfService from "@/pages/TermsOfService";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 
 // todo: remove mock functionality - user authentication state
 type User = {
@@ -129,6 +131,12 @@ function App() {
           </Route>
           <Route path="/privacy">
             <PrivacyPolicy />
+          </Route>
+          <Route path="/forgot-password">
+            <ForgotPassword />
+          </Route>
+          <Route path="/reset-password">
+            <ResetPassword />
           </Route>
           <Route>
             {currentUser ? (
