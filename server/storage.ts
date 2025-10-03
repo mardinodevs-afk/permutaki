@@ -9,18 +9,6 @@ export type NewUser = z.infer<typeof insertUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
 export type InsertUser = typeof users.$inferInsert;
 
-// Location edit history table
-export const locationHistory = {
-  id: '',
-  userId: '',
-  type: 'current' as 'current' | 'desired',
-  oldProvince: '',
-  oldDistrict: '',
-  newProvince: '',
-  newDistrict: '',
-  editedAt: new Date(),
-};
-
 export const storage = {
   // User operations
   async insertUser(userData: Omit<InsertUser, "id" | "createdAt"> & {
@@ -57,7 +45,7 @@ export const storage = {
 
   async deleteUser(id: string): Promise<boolean> {
     const result = await db.delete(users).where(eq(users.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   },
 
   // Location update with history tracking
@@ -196,12 +184,12 @@ export const storage = {
 
   async toggleUserStatus(id: string, isActive: boolean): Promise<boolean> {
     const result = await db.update(users).set({ isActive }).where(eq(users.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   },
 
   async banUser(id: string): Promise<boolean> {
     const result = await db.update(users).set({ isBanned: true, isActive: false }).where(eq(users.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   },
 
   // Reports operations
