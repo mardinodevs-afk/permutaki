@@ -2,7 +2,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, loginUserSchema } from "@shared/schema";
+import { 
+  insertUserSchema, 
+  loginUserSchema, 
+  requestPasswordResetSchema, 
+  resetPasswordSchema,
+  changePasswordSchema 
+} from "@shared/schema";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -112,6 +118,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Login error:', error);
       res.status(400).json({ message: 'Erro ao fazer login' });
+    }
+  });
+
+  // Password recovery routes
+  app.post("/api/auth/request-password-reset", async (req, res) => {
+    try {
+      const { phone } = requestPasswordResetSchema.parse(req.body);
+      
+      const result = await storage.requestPasswordReset(phone);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.message });
+      }
+
+      console.log(`Password reset code for ${phone}: ${result.token}`);
+      
+      res.json({ 
+        message: 'Código de recuperação enviado. Por favor, verifique seu telefone.',
+        token: result.token
+      });
+    } catch (error) {
+      console.error('Password reset request error:', error);
+      res.status(400).json({ message: 'Erro ao solicitar recuperação de senha' });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { phone, token, newPassword } = resetPasswordSchema.parse(req.body);
+      
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      
+      const result = await storage.resetPasswordWithToken(phone, token, hashedPassword);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.message });
+      }
+
+      res.json({ message: 'Senha redefinida com sucesso' });
+    } catch (error) {
+      console.error('Password reset error:', error);
+      res.status(400).json({ message: 'Erro ao redefinir senha' });
+    }
+  });
+
+  app.post("/api/auth/change-password", authenticateToken, async (req: any, res) => {
+    try {
+      const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+      
+      const user = await storage.getUserById(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: 'Usuário não encontrado' });
+      }
+
+      const validPassword = await bcrypt.compare(currentPassword, user.password);
+      if (!validPassword) {
+        return res.status(401).json({ message: 'Senha atual incorreta' });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const result = await storage.updatePassword(user.id, hashedPassword);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.message });
+      }
+
+      res.json({ message: 'Senha alterada com sucesso' });
+    } catch (error) {
+      console.error('Password change error:', error);
+      res.status(400).json({ message: 'Erro ao alterar senha' });
     }
   });
 
