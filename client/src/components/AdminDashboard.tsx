@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./admin/AdminSidebar";
 import UsersManagement from "./admin/UsersManagement";
 import LandingManagement from "./admin/LandingManagement";
 import AppManagement from "./admin/AppManagement";
 import SystemManagement from "./admin/SystemManagement";
 import ThemeToggle from "./ThemeToggle";
+import { Separator } from "@/components/ui/separator";
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -35,13 +36,8 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     }
   };
 
-  const style = {
-    "--sidebar-width": "16rem",
-    "--sidebar-width-icon": "3rem",
-  };
-
   return (
-    <SidebarProvider style={style as React.CSSProperties}>
+    <SidebarProvider>
       <div className="flex h-screen w-full">
         <AdminSidebar 
           currentPath={currentPath}
@@ -49,22 +45,20 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           onLogout={handleLogout}
         />
         
-        <div className="flex flex-col flex-1 overflow-hidden">
-          <header className="flex items-center justify-between p-4 border-b">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger data-testid="button-sidebar-toggle" />
-              <div>
-                <h1 className="text-xl font-bold text-primary">Permutaki Admin</h1>
-              </div>
+        <SidebarInset className="flex flex-col flex-1">
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" data-testid="button-sidebar-toggle" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <div className="flex items-center justify-between flex-1">
+              <h1 className="text-xl font-bold text-primary">Painel de Administração</h1>
+              <ThemeToggle />
             </div>
-            
-            <ThemeToggle />
           </header>
           
           <main className="flex-1 overflow-auto p-6">
             {renderContent()}
           </main>
-        </div>
+        </SidebarInset>
       </div>
     </SidebarProvider>
   );
