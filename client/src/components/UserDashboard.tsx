@@ -8,12 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { LogOut, Search, User, MessageCircle, Calendar, Shield, Camera, Eye, EyeOff, Trash2, Pause, HelpCircle, Send } from "lucide-react";
+import { LogOut, Search, User, MessageCircle, Calendar, Shield, Camera, Eye, EyeOff, Trash2, Pause, HelpCircle, Send, Key } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLocation } from "wouter";
 import UserCard from "./UserCard";
 import ThemeToggle from "./ThemeToggle";
 import { mozambiqueData, sectors } from "@shared/mozambique-data";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 interface CurrentUser {
   id: string;
@@ -73,6 +74,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
   });
 
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   const [profileData, setProfileData] = useState({
     salaryLevel: 15,
@@ -158,18 +160,6 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
     }
   }, [searchFilters, currentUser]);
 
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: ""
-  });
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false
-  });
-
   const handleWhatsAppContact = (userId: string) => {
     console.log("WhatsApp contact initiated for user:", userId);
     // todo: remove mock functionality - implement actual WhatsApp contact
@@ -203,17 +193,6 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
     }
   };
 
-  const handlePasswordChange = () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("As palavras-passe não coincidem");
-      return;
-    }
-    // todo: implement actual password change
-    console.log("Password change requested");
-    setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    setShowPasswordForm(false);
-  };
-
   const handleSuspendAccount = () => {
     if (confirm("Tem certeza que deseja suspender a sua conta? Pode reactivá-la posteriormente.")) {
       // todo: implement account suspension
@@ -243,11 +222,6 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
 
   const canEditDesiredLocation = () => {
     // For now, allow editing (would need to implement tracking)
-    return true;
-  };
-
-  const canChangePassword = () => {
-    // For now, allow 3 changes per day (would need to implement tracking)
     return true;
   };
 
@@ -677,105 +651,27 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
 
             {/* Password Change Section */}
             <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Alterar Palavra-passe</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Alterações hoje: 0/3
-              </p>
-              
-              {!showPasswordForm ? (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowPasswordForm(true)}
-                  disabled={!canChangePassword()}
-                  data-testid="button-change-password"
-                >
-                  Alterar Palavra-passe
-                </Button>
-              ) : (
-                <div className="space-y-4">
-                  <div className="relative">
-                    <label className="text-sm font-medium">Palavra-passe Actual</label>
-                    <div className="relative">
-                      <Input 
-                        type={showPasswords.current ? "text" : "password"}
-                        value={passwordData.currentPassword}
-                        onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                        data-testid="input-current-password"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
-                      >
-                        {showPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="relative">
-                    <label className="text-sm font-medium">Nova Palavra-passe</label>
-                    <div className="relative">
-                      <Input 
-                        type={showPasswords.new ? "text" : "password"}
-                        value={passwordData.newPassword}
-                        onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                        data-testid="input-new-password"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
-                      >
-                        {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="relative">
-                    <label className="text-sm font-medium">Confirmar Nova Palavra-passe</label>
-                    <div className="relative">
-                      <Input 
-                        type={showPasswords.confirm ? "text" : "password"}
-                        value={passwordData.confirmPassword}
-                        onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                        data-testid="input-confirm-password"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
-                      >
-                        {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button onClick={handlePasswordChange} data-testid="button-save-password">
-                      Guardar Nova Palavra-passe
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowPasswordForm(false)}
-                      data-testid="button-cancel-password"
-                    >
-                      Cancelar
-                    </Button>
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Key className="h-5 w-5 text-primary" />
                   </div>
                 </div>
-              )}
-              
-              {!canChangePassword() && (
-                <p className="text-sm text-red-600 mt-2">
-                  Limite de alterações diárias atingido. Tente novamente amanhã.
-                </p>
-              )}
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-2">Segurança da Conta</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Mantenha sua conta segura alterando sua senha regularmente.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowChangePasswordModal(true)}
+                    data-testid="button-change-password"
+                  >
+                    <Key className="h-4 w-4 mr-2" />
+                    Alterar Senha
+                  </Button>
+                </div>
+              </div>
             </Card>
 
             {/* Account Security Section */}
@@ -1019,6 +915,11 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
           </TabsContent>
         </Tabs>
       </div>
+      
+      <ChangePasswordModal 
+        isOpen={showChangePasswordModal} 
+        onClose={() => setShowChangePasswordModal(false)} 
+      />
     </div>
   );
 }
