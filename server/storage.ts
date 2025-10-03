@@ -177,6 +177,76 @@ export const storage = {
     }
   },
 
+  async requestPasswordReset(phone: string): Promise<{ success: boolean; token?: string; message?: string }> {
+    try {
+      const user = await this.getUserByPhone(phone);
+      if (!user) {
+        return { success: false, message: 'Usuário não encontrado' };
+      }
+
+      const token = Math.floor(100000 + Math.random() * 900000).toString();
+      const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+      await db.update(users)
+        .set({ 
+          resetPasswordToken: token,
+          resetPasswordExpires: expires
+        })
+        .where(eq(users.phone, phone));
+
+      return { success: true, token };
+    } catch (error) {
+      return { success: false, message: 'Erro ao solicitar recuperação de senha' };
+    }
+  },
+
+  async verifyResetToken(phone: string, token: string): Promise<{ valid: boolean; userId?: string }> {
+    try {
+      const [user] = await db.select()
+        .from(users)
+        .where(
+          and(
+            eq(users.phone, phone),
+            eq(users.resetPasswordToken, token)
+          )
+        );
+
+      if (!user || !user.resetPasswordExpires) {
+        return { valid: false };
+      }
+
+      if (new Date() > user.resetPasswordExpires) {
+        return { valid: false };
+      }
+
+      return { valid: true, userId: user.id };
+    } catch (error) {
+      return { valid: false };
+    }
+  },
+
+  async resetPasswordWithToken(phone: string, token: string, newPassword: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const verification = await this.verifyResetToken(phone, token);
+      
+      if (!verification.valid) {
+        return { success: false, message: 'Código inválido ou expirado' };
+      }
+
+      await db.update(users)
+        .set({ 
+          password: newPassword,
+          resetPasswordToken: null,
+          resetPasswordExpires: null
+        })
+        .where(eq(users.phone, phone));
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: 'Erro ao resetar senha' };
+    }
+  },
+
   // Admin operations
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).orderBy(users.createdAt);
