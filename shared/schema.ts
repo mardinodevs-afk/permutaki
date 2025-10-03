@@ -23,6 +23,8 @@ export const users = pgTable("users", {
   email: text("email"),
   // Security
   password: text("password").notNull(),
+  resetPasswordToken: text("reset_password_token"),
+  resetPasswordExpires: timestamp("reset_password_expires"),
   // Profile settings
   isActive: boolean("is_active").default(true),
   isPremium: boolean("is_premium").default(false),
@@ -106,9 +108,30 @@ export const searchUsersSchema = z.object({
   desiredDistrict: z.string().optional(),
 });
 
+// Schema for password reset request
+export const requestPasswordResetSchema = z.object({
+  phone: z.string().regex(/^\+258[0-9]{9}$/, "Número de telefone deve ser no formato +258XXXXXXXXX"),
+});
+
+// Schema for password reset
+export const resetPasswordSchema = z.object({
+  phone: z.string(),
+  token: z.string().length(6, "Código deve ter 6 dígitos"),
+  newPassword: z.string().min(8, "Senha deve ter pelo menos 8 caracteres"),
+});
+
+// Schema for password change (logged in user)
+export const changePasswordSchema = z.object({
+  currentPassword: z.string(),
+  newPassword: z.string().min(8, "Senha deve ter pelo menos 8 caracteres"),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type LoginUser = z.infer<typeof loginUserSchema>;
 export type SearchUsers = z.infer<typeof searchUsersSchema>;
 export type Report = typeof reports.$inferSelect;
 export type Rating = typeof ratings.$inferSelect;
+export type RequestPasswordReset = z.infer<typeof requestPasswordResetSchema>;
+export type ResetPassword = z.infer<typeof resetPasswordSchema>;
+export type ChangePassword = z.infer<typeof changePasswordSchema>;
