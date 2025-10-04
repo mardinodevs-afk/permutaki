@@ -94,13 +94,37 @@ export default function RegistrationModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validações antes de enviar
+    if (!formData.masterKey || formData.masterKey.length !== 6) {
+      return;
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      return;
+    }
+    
     setIsLoading(true);
-    console.log("Registration data:", formData);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Garantir que todos os campos estão corretos
+    const registrationData = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      sector: formData.sector,
+      salaryLevel: parseInt(formData.salaryLevel),
+      grade: formData.grade,
+      currentProvince: formData.currentProvince,
+      currentDistrict: formData.currentDistrict,
+      desiredProvince: formData.desiredProvince,
+      desiredDistrict: formData.desiredDistrict,
+      phone: formData.phone,
+      email: formData.email || "",
+      password: formData.password,
+      masterKey: formData.masterKey
+    };
     
-    onRegister(formData);
+    console.log("Registration data being sent:", registrationData);
+    onRegister(registrationData);
     setIsLoading(false);
   };
 

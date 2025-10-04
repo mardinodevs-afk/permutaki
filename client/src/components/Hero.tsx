@@ -20,7 +20,7 @@ export default function Hero({ onLoginClick, onRegisterClick }: HeroProps) {
       <div className="max-w-6xl mx-auto px-4 text-center py-24">
         <img src="/logo.png" alt="Permutaki Logo" className="w-32 h-32 mx-auto mb-8" />
         <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-          Permutaki
+          PermutAKI
         </h1>
         <p className="text-xl md:text-2xl mb-4 font-medium">
           Facilitando a sua transferência por permuta

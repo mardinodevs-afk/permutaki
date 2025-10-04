@@ -31,7 +31,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
       avatarUrl: testimonial1
     },
     {
-      name: "João Machel", 
+      name: "João Machel",
       role: "Enfermeiro",
       location: "Beira → Pemba",
       rating: 4,
@@ -41,7 +41,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
     {
       name: "Ana Chimoio",
       role: "Administrativa",
-      location: "Tete → Quelimane", 
+      location: "Tete → Quelimane",
       rating: 5,
       testimonial: "Plataforma segura e confiável. Consegui verificar todos os detalhes antes de fazer o contacto.",
       avatarUrl: testimonial3
@@ -64,14 +64,14 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
       <header className="absolute top-0 left-0 right-0 z-50 bg-transparent">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="text-white">
-            <h1 className="text-xl font-bold">Permutaki</h1>
+            <h1 className="text-xl font-bold">PermutAKI</h1>
           </div>
           <ThemeToggle />
         </div>
       </header>
 
       {/* Hero Section */}
-      <Hero 
+      <Hero
         onLoginClick={() => setShowLoginModal(true)}
         onRegisterClick={() => setShowRegistrationModal(true)}
       />
@@ -81,14 +81,14 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              Porque escolher o Permutaki?
+              Porque escolher o PermutAKI?
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Oferecemos a plataforma mais segura e eficiente para funcionários públicos 
+              Oferecemos a plataforma mais segura e eficiente para funcionários públicos
               encontrarem parceiros para transferência por permuta.
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <InfoCard
               icon={Shield}
@@ -127,11 +127,11 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                 <AlertTriangle className="h-12 w-12 text-red-600" />
               </div>
             </div>
-            
+
             <h2 className="text-2xl font-bold text-foreground mb-4">
               Segurança em Primeiro Lugar
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
               <div className="flex items-start gap-3">
                 <CheckCircle className="h-5 w-5 text-green-600 mt-1 flex-shrink-0" />
@@ -142,7 +142,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <CheckCircle className="h-5 w-5 text-green-600 mt-1 flex-shrink-0" />
                 <div className="text-left">
@@ -152,7 +152,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <CheckCircle className="h-5 w-5 text-green-600 mt-1 flex-shrink-0" />
                 <div className="text-left">
@@ -162,7 +162,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <CheckCircle className="h-5 w-5 text-green-600 mt-1 flex-shrink-0" />
                 <div className="text-left">
@@ -188,7 +188,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
               Histórias reais de funcionários públicos que conseguiram a sua transferência
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {testimonials.map((testimonial, index) => (
               <TestimonialCard
@@ -209,7 +209,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
           <p className="text-xl mb-8 opacity-90">
             Junte-se a centenas de funcionários públicos que já conseguiram a sua transferência
           </p>
-          
+
           <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
             <button
               onClick={() => setShowRegistrationModal(true)}
