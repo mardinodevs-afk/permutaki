@@ -52,7 +52,7 @@ export default function ResetPassword() {
   const onSubmit = async (data: ResetPasswordForm) => {
     setIsLoading(true);
     try {
-      await apiRequest("/api/auth/reset-password", "POST", {
+      await apiRequest("POST", "/api/auth/reset-password", {
         phone,
         token: data.token,
         newPassword: data.newPassword,

@@ -58,8 +58,8 @@ export default function ForgotPassword() {
     setIsLoading(true);
     try {
       const response = await apiRequest<{ questions: VerificationQuestion[] }>(
-        "/api/auth/get-verification-questions", 
-        "POST", 
+        "POST",
+        "/api/auth/get-verification-questions",
         { phone: data.phone }
       );
       
@@ -86,8 +86,8 @@ export default function ForgotPassword() {
     setIsLoading(true);
     try {
       const response = await apiRequest<{ token: string }>(
-        "/api/auth/verify-and-reset", 
-        "POST", 
+        "POST",
+        "/api/auth/verify-and-reset",
         {
           phone,
           answers: {
