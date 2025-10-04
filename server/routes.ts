@@ -12,7 +12,11 @@ import {
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET must be set. Please configure a strong secret key.");
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Middleware to verify JWT token
 const authenticateToken = (req: any, res: any, next: any) => {
@@ -136,10 +140,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Telefone ou chave mestra incorretos' });
       }
 
-      console.log(`Master key verified for ${phone}`);
+      // Generate a short-lived reset token (15 minutes)
+      const resetToken = jwt.sign(
+        { userId: user.id, phone: user.phone, purpose: 'password_reset' },
+        JWT_SECRET,
+        { expiresIn: '15m' }
+      );
+
+      console.log(`Master key verified for ${phone}, reset token issued`);
       
       res.json({ 
-        message: 'Chave mestra verificada com sucesso'
+        message: 'Chave mestra verificada com sucesso',
+        resetToken
       });
     } catch (error) {
       console.error('Request password reset error:', error);
@@ -162,6 +174,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: 'Senha redefinida com sucesso' });
     } catch (error) {
       console.error('Password reset error:', error);
+      res.status(400).json({ message: 'Erro ao redefinir senha' });
+    }
+  });
+
+  // Direct password reset (after master key verification)
+  app.post("/api/auth/reset-password-direct", async (req, res) => {
+    try {
+      const { resetToken, newPassword } = req.body;
+      
+      if (!resetToken || !newPassword) {
+        return res.status(400).json({ message: 'Token e nova senha são obrigatórios' });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: 'Senha deve ter pelo menos 8 caracteres' });
+      }
+
+      // Verify reset token
+      let decoded: any;
+      try {
+        decoded = jwt.verify(resetToken, JWT_SECRET);
+        
+        // Verify token purpose
+        if (decoded.purpose !== 'password_reset') {
+          return res.status(403).json({ message: 'Token inválido' });
+        }
+      } catch (err) {
+        return res.status(403).json({ message: 'Token inválido ou expirado' });
+      }
+
+      const user = await storage.getUserById(decoded.userId);
+      if (!user || !user.isActive) {
+        return res.status(404).json({ message: 'Usuário não encontrado' });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const result = await storage.updatePassword(user.id, hashedPassword);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.message });
+      }
+
+      console.log(`Password reset successfully for ${user.phone}`);
+      res.json({ message: 'Senha redefinida com sucesso' });
+    } catch (error) {
+      console.error('Direct password reset error:', error);
       res.status(400).json({ message: 'Erro ao redefinir senha' });
     }
   });

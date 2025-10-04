@@ -28,8 +28,7 @@ export default function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
 
   const params = new URLSearchParams(window.location.search);
-  const phone = params.get("phone") || "";
-  const token = params.get("token") || "";
+  const resetToken = params.get("token") || "";
 
   const form = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
@@ -39,25 +38,25 @@ export default function ResetPassword() {
     },
   });
 
-  if (!phone || !token) {
+  if (!resetToken) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-background">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Link Inválido</CardTitle>
+            <CardTitle>Acesso Inválido</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
               <div className="flex gap-2 items-start">
                 <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-red-900 dark:text-red-100">
-                  Este link de recuperação é inválido ou expirou. Por favor, solicite um novo link.
+                  Acesso inválido. Por favor, comece o processo de recuperação novamente.
                 </p>
               </div>
             </div>
             <Link href="/forgot-password">
               <Button className="w-full">
-                Solicitar Novo Link
+                Recuperar Senha
               </Button>
             </Link>
           </CardContent>
@@ -69,9 +68,8 @@ export default function ResetPassword() {
   const onSubmit = async (data: ResetPasswordForm) => {
     setIsLoading(true);
     try {
-      await apiRequest("POST", "/api/auth/reset-password", {
-        phone,
-        token,
+      await apiRequest("POST", "/api/auth/reset-password-direct", {
+        resetToken,
         newPassword: data.newPassword,
       });
       
@@ -85,7 +83,7 @@ export default function ResetPassword() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: error.message || "Link inválido ou expirado",
+        description: error.message || "Token inválido ou expirado",
       });
     } finally {
       setIsLoading(false);
@@ -113,7 +111,7 @@ export default function ResetPassword() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
                 <p className="text-xs text-blue-900 dark:text-blue-100">
-                  Este link expira em 15 minutos.
+                  Token de recuperação válido. Este link expira em 15 minutos.
                 </p>
               </div>
               
