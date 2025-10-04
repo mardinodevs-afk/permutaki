@@ -64,7 +64,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
       <header className="absolute top-0 left-0 right-0 z-50 bg-transparent">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="text-white">
-            <h1 className="text-xl font-bold">Permutaki</h1>
+            <h1 className="text-xl font-bold">PermutAKI</h1>
           </div>
           <ThemeToggle />
         </div>
@@ -81,7 +81,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              Porque escolher o Permutaki?
+              Porque escolher o PermutAKI?
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Oferecemos a plataforma mais segura e eficiente para funcionários públicos

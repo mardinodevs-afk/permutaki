@@ -12,7 +12,7 @@ export default function Footer() {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
               <img src="/logo.png" alt="Permutaki Logo" className="w-10 h-10" />
-              <h3 className="text-2xl font-bold text-primary">Permutaki</h3>
+              <h3 className="text-2xl font-bold text-primary">PermutAKI</h3>
             </div>
             <p className="text-muted-foreground mb-4">
               Facilitando a sua transferência por permuta de forma gratuita e segura.
@@ -103,7 +103,7 @@ export default function Footer() {
 
         <div className="border-t border-border mt-8 pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2025 Permutaki. Todos os direitos reservados. • 
+            © 2025 PermutAKI. Todos os direitos reservados. • 
             <span className="font-medium text-foreground ml-2">
               A Permuta é GRÁTIS - Denuncie e evite burlas
             </span>
