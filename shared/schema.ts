@@ -28,6 +28,8 @@ export const users = pgTable("users", {
   // Profile settings
   isActive: boolean("is_active").default(true),
   isPremium: boolean("is_premium").default(false),
+  premiumExpiresAt: timestamp("premium_expires_at"),
+  premiumPromotedBy: text("premium_promoted_by"),
   profileLastUpdated: timestamp("profile_last_updated").defaultNow(),
   whatsappContactsToday: integer("whatsapp_contacts_today").default(0),
   lastContactReset: timestamp("last_contact_reset").defaultNow(),

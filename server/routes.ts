@@ -431,6 +431,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/admin/user/:id/promote-premium", authenticateToken, requireAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { duration } = req.body; // duration in days: 7, 30, 90, 180, 365
+      
+      if (!duration || ![7, 30, 90, 180, 365].includes(duration)) {
+        return res.status(400).json({ message: 'Duração inválida' });
+      }
+
+      const result = await storage.promoteToPremium(id, duration, req.user.id);
+      
+      if (result) {
+        res.json({ message: 'Usuário promovido para Premium com sucesso' });
+      } else {
+        res.status(400).json({ message: 'Erro ao promover usuário' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  app.post("/api/admin/user/:id/demote-premium", authenticateToken, requireAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      const result = await storage.demoteFromPremium(id);
+      
+      if (result) {
+        res.json({ message: 'Usuário despromovido de Premium com sucesso' });
+      } else {
+        res.status(400).json({ message: 'Erro ao despromover usuário' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

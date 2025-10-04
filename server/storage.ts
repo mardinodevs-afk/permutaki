@@ -228,7 +228,7 @@ export const storage = {
   async resetPasswordWithToken(phone: string, token: string, newPassword: string): Promise<{ success: boolean; message?: string }> {
     try {
       const verification = await this.verifyResetToken(phone, token);
-      
+
       if (!verification.valid) {
         return { success: false, message: 'Código inválido ou expirado' };
       }
@@ -257,9 +257,65 @@ export const storage = {
     return (result.rowCount ?? 0) > 0;
   },
 
-  async banUser(id: string): Promise<boolean> {
-    const result = await db.update(users).set({ isBanned: true, isActive: false }).where(eq(users.id, id));
-    return (result.rowCount ?? 0) > 0;
+  async banUser(userId: string): Promise<boolean> {
+    try {
+      await db.update(users)
+        .set({ isBanned: true, isActive: false })
+        .where(eq(users.id, userId));
+      return true;
+    } catch (error) {
+      return false;
+    }
+  },
+
+  async promoteToPremium(userId: string, durationDays: number, adminId: string): Promise<boolean> {
+    try {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + durationDays);
+
+      await db.update(users)
+        .set({ 
+          isPremium: true,
+          premiumExpiresAt: expiresAt,
+          premiumPromotedBy: adminId
+        })
+        .where(eq(users.id, userId));
+      return true;
+    } catch (error) {
+      console.error("Error promoting user to premium:", error);
+      return false;
+    }
+  },
+
+  async demoteFromPremium(userId: string): Promise<boolean> {
+    try {
+      await db.update(users)
+        .set({ 
+          isPremium: false,
+          premiumExpiresAt: null,
+          premiumPromotedBy: null
+        })
+        .where(eq(users.id, userId));
+      return true;
+    } catch (error) {
+      console.error("Error demoting user from premium:", error);
+      return false;
+    }
+  },
+
+  async checkExpiredPremiumAccounts(): Promise<void> {
+    try {
+      const now = new Date();
+      await db.update(users)
+        .set({ 
+          isPremium: false,
+          premiumExpiresAt: null,
+          premiumPromotedBy: null
+        })
+        .where(sql`${users.premiumExpiresAt} IS NOT NULL AND ${users.premiumExpiresAt} < ${now}`);
+    } catch (error) {
+      console.error("Error checking expired premium accounts:", error);
+    }
   },
 
   // Reports operations

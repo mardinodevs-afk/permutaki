@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, Ban, CheckCircle, XCircle, Crown } from "lucide-react";
+import { Search, Ban, CheckCircle, XCircle, Crown, TrendingUp, TrendingDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface User {
@@ -58,7 +58,8 @@ export default function UsersManagement() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [actionType, setActionType] = useState<"ban" | "activate" | "deactivate" | null>(null);
+  const [actionType, setActionType] = useState<"ban" | "activate" | "deactivate" | "promote" | "demote" | null>(null);
+  const [promotionDuration, setPromotionDuration] = useState<number>(30);
 
   useEffect(() => {
     loadUsers();
@@ -119,9 +120,12 @@ export default function UsersManagement() {
     setFilteredUsers(filtered);
   };
 
-  const handleUserAction = async (user: User, action: "ban" | "activate" | "deactivate") => {
+  const handleUserAction = async (user: User, action: "ban" | "activate" | "deactivate" | "promote" | "demote") => {
     setSelectedUser(user);
     setActionType(action);
+    if (action === "promote") {
+      setPromotionDuration(30); // Default to 30 days
+    }
   };
 
   const confirmAction = async () => {
@@ -129,9 +133,24 @@ export default function UsersManagement() {
 
     try {
       const token = localStorage.getItem('token');
-      const endpoint = actionType === "ban" 
-        ? `/api/admin/users/${selectedUser.id}/ban`
-        : `/api/admin/users/${selectedUser.id}/toggle-status`;
+      let endpoint = '';
+      let body: any = {};
+      
+      switch (actionType) {
+        case "ban":
+          endpoint = `/api/admin/user/${selectedUser.id}/ban`;
+          break;
+        case "promote":
+          endpoint = `/api/admin/user/${selectedUser.id}/promote-premium`;
+          body = { duration: promotionDuration };
+          break;
+        case "demote":
+          endpoint = `/api/admin/user/${selectedUser.id}/demote-premium`;
+          break;
+        default:
+          endpoint = `/api/admin/user/${selectedUser.id}/status`;
+          body = { isActive: actionType === "activate" };
+      }
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -139,15 +158,21 @@ export default function UsersManagement() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          isActive: actionType === "activate" 
-        })
+        body: JSON.stringify(body)
       });
 
       if (response.ok) {
+        const messages = {
+          ban: "banido",
+          activate: "ativado",
+          deactivate: "desativado",
+          promote: "promovido para Premium",
+          demote: "despromovido de Premium"
+        };
+        
         toast({
           title: "Sucesso",
-          description: `Usuário ${actionType === "ban" ? "banido" : actionType === "activate" ? "ativado" : "desativado"} com sucesso`,
+          description: `Usuário ${messages[actionType]} com sucesso`,
         });
         loadUsers();
       }
@@ -174,6 +199,10 @@ export default function UsersManagement() {
         return `Deseja ativar ${userName}?`;
       case "deactivate":
         return `Deseja desativar ${userName}? O usuário não poderá acessar o sistema enquanto estiver desativado.`;
+      case "promote":
+        return `Deseja promover ${userName} para Premium?`;
+      case "demote":
+        return `Deseja despromover ${userName} de Premium? O usuário voltará a ter acesso gratuito.`;
       default:
         return "";
     }
@@ -317,7 +346,7 @@ export default function UsersManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          {!user.isBanned && (
+                          {!user.isBanned && !user.isAdmin && (
                             <>
                               {user.isActive ? (
                                 <Button
@@ -325,6 +354,7 @@ export default function UsersManagement() {
                                   variant="outline"
                                   onClick={() => handleUserAction(user, "deactivate")}
                                   data-testid={`button-deactivate-${user.id}`}
+                                  title="Desativar"
                                 >
                                   <XCircle className="h-4 w-4" />
                                 </Button>
@@ -334,8 +364,30 @@ export default function UsersManagement() {
                                   variant="outline"
                                   onClick={() => handleUserAction(user, "activate")}
                                   data-testid={`button-activate-${user.id}`}
+                                  title="Ativar"
                                 >
                                   <CheckCircle className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {user.isPremium ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleUserAction(user, "demote")}
+                                  data-testid={`button-demote-${user.id}`}
+                                  title="Despromover de Premium"
+                                >
+                                  <TrendingDown className="h-4 w-4" />
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleUserAction(user, "promote")}
+                                  data-testid={`button-promote-${user.id}`}
+                                  title="Promover para Premium"
+                                >
+                                  <TrendingUp className="h-4 w-4" />
                                 </Button>
                               )}
                               <Button
@@ -343,6 +395,7 @@ export default function UsersManagement() {
                                 variant="destructive"
                                 onClick={() => handleUserAction(user, "ban")}
                                 data-testid={`button-ban-${user.id}`}
+                                title="Banir"
                               >
                                 <Ban className="h-4 w-4" />
                               </Button>
@@ -370,6 +423,28 @@ export default function UsersManagement() {
               {getActionMessage()}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          
+          {actionType === "promote" && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Duração da Promoção</label>
+              <Select 
+                value={promotionDuration.toString()} 
+                onValueChange={(value) => setPromotionDuration(parseInt(value))}
+              >
+                <SelectTrigger data-testid="select-promotion-duration">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">7 dias</SelectItem>
+                  <SelectItem value="30">30 dias (1 mês)</SelectItem>
+                  <SelectItem value="90">90 dias (3 meses)</SelectItem>
+                  <SelectItem value="180">180 dias (6 meses)</SelectItem>
+                  <SelectItem value="365">365 dias (1 ano)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <AlertDialogFooter>
             <AlertDialogCancel data-testid="button-cancel-action">Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmAction} data-testid="button-confirm-action">
