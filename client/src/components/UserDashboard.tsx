@@ -449,6 +449,34 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
+                      Nome
+                    </label>
+                    <Input 
+                      value={currentUser?.firstName || ""} 
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Não editável após registo
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Apelido
+                    </label>
+                    <Input 
+                      value={currentUser?.lastName || ""} 
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Não editável após registo
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">
                       Sector
                     </label>
                     <Input 
