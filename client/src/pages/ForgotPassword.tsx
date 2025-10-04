@@ -34,14 +34,18 @@ export default function ForgotPassword() {
   const onSubmit = async (data: ResetRequestForm) => {
     setIsLoading(true);
     try {
-      await apiRequest("POST", "/api/auth/request-password-reset", data);
+      const response: any = await apiRequest(
+        "POST",
+        "/api/auth/request-password-reset",
+        data
+      );
 
       toast({
         title: "Verificação bem-sucedida",
         description: "Agora você pode definir uma nova senha.",
       });
 
-      setLocation(`/reset-password?phone=${encodeURIComponent(data.phone)}`);
+      setLocation(`/reset-password?token=${encodeURIComponent(response.resetToken)}`);
     } catch (error: any) {
       toast({
         variant: "destructive",
