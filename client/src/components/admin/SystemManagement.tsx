@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, History, Calendar, MapPin, Activity, Database } from "lucide-react";
+import { Users, History, Calendar, MapPin, Activity, Database, KeyRound, Copy, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface UserStats {
@@ -26,6 +27,17 @@ interface EditHistory {
   userType: string;
 }
 
+interface PasswordResetRequest {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string;
+  requestedAt: Date;
+  hasActiveToken: boolean;
+  lastTokenGeneratedAt?: Date;
+}
+
 export default function SystemManagement() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -39,6 +51,8 @@ export default function SystemManagement() {
     editsThisMonth: 0
   });
   const [editHistory, setEditHistory] = useState<EditHistory[]>([]);
+  const [resetRequests, setResetRequests] = useState<PasswordResetRequest[]>([]);
+  const [generatingToken, setGeneratingToken] = useState<string | null>(null);
 
   useEffect(() => {
     loadSystemData();
@@ -66,6 +80,15 @@ export default function SystemManagement() {
         const history = await historyResponse.json();
         setEditHistory(history.slice(0, 10));
       }
+
+      const resetResponse = await fetch('/api/admin/password-reset-requests', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (resetResponse.ok) {
+        const requests = await resetResponse.json();
+        setResetRequests(requests);
+      }
     } catch (error) {
       toast({
         title: "Erro",
@@ -74,6 +97,42 @@ export default function SystemManagement() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateToken = async (userId: string) => {
+    try {
+      setGeneratingToken(userId);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`/api/admin/generate-reset-token/${userId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const data = await response.json();
+      
+      await navigator.clipboard.writeText(data.resetLink);
+      
+      toast({
+        title: "Token gerado!",
+        description: `Link de recuperação copiado para área de transferência. Envie via WhatsApp para ${data.phone}. Válido por 1 hora.`,
+      });
+
+      loadSystemData();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao gerar token",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingToken(null);
     }
   };
 
@@ -96,7 +155,7 @@ export default function SystemManagement() {
       </div>
 
       <Tabs defaultValue="stats" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="stats" data-testid="tab-stats">
             <Activity className="h-4 w-4 mr-2" />
             Estatísticas
@@ -104,6 +163,10 @@ export default function SystemManagement() {
           <TabsTrigger value="history" data-testid="tab-history">
             <History className="h-4 w-4 mr-2" />
             Histórico
+          </TabsTrigger>
+          <TabsTrigger value="password-reset" data-testid="tab-password-reset">
+            <KeyRound className="h-4 w-4 mr-2" />
+            Recuperação de Senha
           </TabsTrigger>
           <TabsTrigger value="database" data-testid="tab-database">
             <Database className="h-4 w-4 mr-2" />
@@ -233,6 +296,116 @@ export default function SystemManagement() {
                     </div>
                   </div>
                 ))
+              )}
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="password-reset" className="space-y-4">
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">
+                Solicitações de Recuperação de Senha ({resetRequests.length})
+              </h3>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={loadSystemData}
+                data-testid="button-refresh-requests"
+              >
+                Atualizar
+              </Button>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+              <div className="flex gap-2 items-start">
+                <CheckCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-blue-900 dark:text-blue-100 space-y-1">
+                  <p className="font-medium">Regras:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>Apenas 1 token pode ser gerado por usuário por dia</li>
+                    <li>Tokens têm validade de 1 hora</li>
+                    <li>O link de recuperação é copiado automaticamente</li>
+                    <li>Envie o link para o usuário via WhatsApp</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              {loading ? (
+                <p className="text-center text-muted-foreground py-8">
+                  Carregando solicitações...
+                </p>
+              ) : resetRequests.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  Nenhuma solicitação pendente
+                </p>
+              ) : (
+                resetRequests.map((request) => {
+                  const canGenerateToken = !request.lastTokenGeneratedAt || 
+                    (new Date().getTime() - new Date(request.lastTokenGeneratedAt).getTime()) >= 24 * 60 * 60 * 1000;
+
+                  return (
+                    <div 
+                      key={request.id} 
+                      className="border rounded-lg p-4 hover-elevate"
+                      data-testid={`reset-request-${request.id}`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-medium">
+                              {request.firstName} {request.lastName}
+                            </h4>
+                            {request.hasActiveToken && (
+                              <Badge variant="default">Token Ativo</Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            <p className="flex items-center gap-2">
+                              <strong>Telefone:</strong> {request.phone}
+                            </p>
+                            {request.email && (
+                              <p className="flex items-center gap-2">
+                                <strong>Email:</strong> {request.email}
+                              </p>
+                            )}
+                            <p className="flex items-center gap-2">
+                              <Calendar className="h-3 w-3" />
+                              <strong>Solicitado:</strong>{" "}
+                              {new Date(request.requestedAt).toLocaleString('pt-PT')}
+                            </p>
+                            {request.lastTokenGeneratedAt && (
+                              <p className="flex items-center gap-2">
+                                <KeyRound className="h-3 w-3" />
+                                <strong>Último token:</strong>{" "}
+                                {new Date(request.lastTokenGeneratedAt).toLocaleString('pt-PT')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => handleGenerateToken(request.id)}
+                          disabled={!canGenerateToken || generatingToken === request.id}
+                          data-testid={`button-generate-token-${request.id}`}
+                          size="sm"
+                        >
+                          {generatingToken === request.id ? (
+                            "Gerando..."
+                          ) : !canGenerateToken ? (
+                            "Limite diário atingido"
+                          ) : (
+                            <>
+                              <Copy className="h-4 w-4 mr-2" />
+                              Gerar Link
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </Card>
