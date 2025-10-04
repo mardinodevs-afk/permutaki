@@ -57,9 +57,11 @@ export default function ForgotPassword() {
   const onSubmitPhone = async (data: PhoneForm) => {
     setIsLoading(true);
     try {
-      const response = await apiRequest("/api/auth/get-verification-questions", "POST", { 
-        phone: data.phone 
-      });
+      const response = await apiRequest<{ questions: VerificationQuestion[] }>(
+        "/api/auth/get-verification-questions", 
+        "POST", 
+        { phone: data.phone }
+      );
       
       setPhone(data.phone);
       setQuestions(response.questions);
@@ -83,13 +85,17 @@ export default function ForgotPassword() {
   const onSubmitVerification = async (data: VerificationForm) => {
     setIsLoading(true);
     try {
-      const response = await apiRequest("/api/auth/verify-and-reset", "POST", {
-        phone,
-        answers: {
-          [questions[0].field]: data.answer1,
-          [questions[1].field]: data.answer2,
-        },
-      });
+      const response = await apiRequest<{ token: string }>(
+        "/api/auth/verify-and-reset", 
+        "POST", 
+        {
+          phone,
+          answers: {
+            [questions[0].field]: data.answer1,
+            [questions[1].field]: data.answer2,
+          },
+        }
+      );
 
       toast({
         title: "Verificação bem-sucedida",
