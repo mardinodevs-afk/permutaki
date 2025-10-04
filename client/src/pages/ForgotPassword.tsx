@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ShieldCheck, CheckCircle } from "lucide-react";
 
 const phoneSchema = z.object({
   phone: z.string().regex(/^\+258[0-9]{9}$/, "Número deve ser no formato +258XXXXXXXXX"),
@@ -38,6 +37,7 @@ export default function ForgotPassword() {
   const [step, setStep] = useState<'phone' | 'verify'>('phone');
   const [questions, setQuestions] = useState<VerificationQuestion[]>([]);
   const [phone, setPhone] = useState("");
+  const [requestSent, setRequestSent] = useState(false);
 
   const phoneForm = useForm<PhoneForm>({
     resolver: zodResolver(phoneSchema),
@@ -114,6 +114,31 @@ export default function ForgotPassword() {
     }
   };
 
+  const onSubmitRequestReset = async (data: PhoneForm) => {
+    setIsLoading(true);
+    try {
+      await apiRequest("POST", "/api/auth/request-password-reset", { 
+        phone: data.phone 
+      });
+
+      setRequestSent(true);
+
+      toast({
+        title: "Solicitação enviada",
+        description: "Sua solicitação foi enviada ao administrador. Você receberá um link de recuperação em breve.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: error.message || "Erro ao processar solicitação",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-md">
@@ -127,13 +152,15 @@ export default function ForgotPassword() {
             <CardTitle>Recuperar Senha</CardTitle>
           </div>
           <CardDescription>
-            {step === 'phone' 
+            {step === 'phone' && !requestSent
               ? "Digite o número de telefone associado à sua conta."
+              : requestSent
+              ? "Sua solicitação foi enviada com sucesso!"
               : "Confirme duas informações do seu cadastro para verificar sua identidade."}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {step === 'phone' ? (
+          {step === 'phone' && !requestSent ? (
             <Form {...phoneForm}>
               <form onSubmit={phoneForm.handleSubmit(onSubmitPhone)} className="space-y-4">
                 <FormField
@@ -163,7 +190,7 @@ export default function ForgotPassword() {
                 </Button>
               </form>
             </Form>
-          ) : (
+          ) : step === 'verify' ? (
             <Form {...verificationForm}>
               <form onSubmit={verificationForm.handleSubmit(onSubmitVerification)} className="space-y-4">
                 <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
@@ -259,6 +286,43 @@ export default function ForgotPassword() {
                     {isLoading ? "Verificando..." : "Verificar"}
                   </Button>
                 </div>
+              </form>
+            </Form>
+          ) : (
+             <Form {...phoneForm}>
+              <form onSubmit={phoneForm.handleSubmit(onSubmitRequestReset)} className="space-y-4">
+                <FormField
+                  control={phoneForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número de Telefone (WhatsApp)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="+258840000000" 
+                          {...field}
+                          data-testid="input-phone"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                  <p className="text-xs text-blue-900 dark:text-blue-100">
+                    Após enviar a solicitação, o administrador irá gerar um link de recuperação e enviar para você.
+                  </p>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={isLoading}
+                  data-testid="button-submit"
+                >
+                  {isLoading ? "Enviando..." : "Enviar Solicitação"}
+                </Button>
               </form>
             </Form>
           )}

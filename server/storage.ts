@@ -1,4 +1,4 @@
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql, desc, isNotNull } from "drizzle-orm";
 import { db } from "./db";
 import { users, reports, ratings, locationHistory } from "@shared/schema";
 import type { insertUserSchema, loginUserSchema } from "@shared/schema";
@@ -177,28 +177,65 @@ export const storage = {
     }
   },
 
-  async requestPasswordReset(phone: string): Promise<{ success: boolean; token?: string; message?: string }> {
-    try {
-      const user = await this.getUserByPhone(phone);
-      if (!user) {
-        return { success: false, message: 'Usuário não encontrado' };
-      }
-
-      const token = Math.floor(100000 + Math.random() * 900000).toString();
-      const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-
-      await db.update(users)
-        .set({ 
-          resetPasswordToken: token,
-          resetPasswordExpires: expires
-        })
-        .where(eq(users.phone, phone));
-
-      return { success: true, token };
-    } catch (error) {
-      return { success: false, message: 'Erro ao solicitar recuperação de senha' };
+  async createPasswordResetRequest(phone: string) {
+    const user = await this.getUserByPhone(phone);
+    if (!user || !user.isActive) {
+      return { success: false, message: 'Usuário não encontrado' };
     }
-  },
+
+    // Just mark that a request was made
+    const requestedAt = new Date();
+    await db.update(users)
+      .set({
+        resetTokenExpiry: requestedAt // Using this field to track request time
+      })
+      .where(eq(users.phone, phone));
+
+    return { success: true };
+  }
+
+  async getPasswordResetRequests() {
+    // Get users who have requested password reset (resetTokenExpiry is set but resetToken is null)
+    const requests = await db.select()
+      .from(users)
+      .where(
+        and(
+          eq(users.isActive, true),
+          isNotNull(users.resetTokenExpiry)
+        )
+      );
+
+    return requests.map(user => ({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      email: user.email,
+      requestedAt: user.resetTokenExpiry,
+      hasActiveToken: !!user.resetToken
+    }));
+  }
+
+  async generatePasswordResetToken(phone: string) {
+    const user = await this.getUserByPhone(phone);
+    if (!user || !user.isActive) {
+      return { success: false, message: 'Usuário não encontrado' };
+    }
+
+    // Generate 6-digit token
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await db.update(users)
+      .set({
+        resetToken: token,
+        resetTokenExpiry: expiresAt
+      })
+      .where(eq(users.phone, phone));
+
+    return { success: true, token };
+  }
+
 
   async verifyResetToken(phone: string, token: string): Promise<{ valid: boolean; userId?: string }> {
     try {
@@ -207,15 +244,15 @@ export const storage = {
         .where(
           and(
             eq(users.phone, phone),
-            eq(users.resetPasswordToken, token)
+            eq(users.resetToken, token)
           )
         );
 
-      if (!user || !user.resetPasswordExpires) {
+      if (!user || !user.resetTokenExpiry) {
         return { valid: false };
       }
 
-      if (new Date() > user.resetPasswordExpires) {
+      if (new Date() > user.resetTokenExpiry) {
         return { valid: false };
       }
 
@@ -234,10 +271,10 @@ export const storage = {
       }
 
       await db.update(users)
-        .set({ 
+        .set({
           password: newPassword,
-          resetPasswordToken: null,
-          resetPasswordExpires: null
+          resetToken: null,
+          resetTokenExpiry: null
         })
         .where(eq(users.phone, phone));
 
@@ -274,7 +311,7 @@ export const storage = {
       expiresAt.setDate(expiresAt.getDate() + durationDays);
 
       await db.update(users)
-        .set({ 
+        .set({
           isPremium: true,
           premiumExpiresAt: expiresAt,
           premiumPromotedBy: adminId
@@ -290,7 +327,7 @@ export const storage = {
   async demoteFromPremium(userId: string): Promise<boolean> {
     try {
       await db.update(users)
-        .set({ 
+        .set({
           isPremium: false,
           premiumExpiresAt: null,
           premiumPromotedBy: null
@@ -307,7 +344,7 @@ export const storage = {
     try {
       const now = new Date();
       await db.update(users)
-        .set({ 
+        .set({
           isPremium: false,
           premiumExpiresAt: null,
           premiumPromotedBy: null

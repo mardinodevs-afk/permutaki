@@ -122,7 +122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Password recovery routes
-  app.post("/api/auth/get-verification-questions", async (req, res) => {
+  app.post("/api/auth/request-password-reset", async (req, res) => {
     try {
       const { phone } = req.body;
       
@@ -131,66 +131,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Usuário não encontrado' });
       }
 
-      // Define all possible questions
-      const allQuestions = [
-        { field: 'firstName', question: 'Qual é o seu primeiro nome?', type: 'text' },
-        { field: 'lastName', question: 'Qual é o seu último nome?', type: 'text' },
-        { field: 'email', question: 'Qual é o seu email?', type: 'text' },
-        { field: 'sector', question: 'Qual é o seu sector?', type: 'select', options: ['Educação', 'Saúde', 'Administração Pública', 'Justiça', 'Outro'] },
-        { field: 'currentProvince', question: 'Qual é a sua província atual?', type: 'text' },
-        { field: 'currentDistrict', question: 'Qual é o seu distrito atual?', type: 'text' },
-        { field: 'desiredProvince', question: 'Qual é a província desejada?', type: 'text' },
-      ];
-
-      // Randomly select 2 questions
-      const shuffled = allQuestions.sort(() => 0.5 - Math.random());
-      const selectedQuestions = shuffled.slice(0, 2);
-
-      res.json({ questions: selectedQuestions });
-    } catch (error) {
-      console.error('Get verification questions error:', error);
-      res.status(400).json({ message: 'Erro ao obter perguntas de verificação' });
-    }
-  });
-
-  app.post("/api/auth/verify-and-reset", async (req, res) => {
-    try {
-      const { phone, answers } = req.body;
-      
-      const user = await storage.getUserByPhone(phone);
-      if (!user || !user.isActive) {
-        return res.status(404).json({ message: 'Usuário não encontrado' });
-      }
-
-      // Verify answers
-      let correctAnswers = 0;
-      for (const [field, answer] of Object.entries(answers)) {
-        const userValue = (user as any)[field];
-        if (userValue && userValue.toLowerCase() === (answer as string).toLowerCase()) {
-          correctAnswers++;
-        }
-      }
-
-      if (correctAnswers < 2) {
-        return res.status(400).json({ message: 'Informações incorretas' });
-      }
-
-      // Generate reset token
-      const result = await storage.requestPasswordReset(phone);
+      // Store the request for admin to process
+      const result = await storage.createPasswordResetRequest(phone);
       
       if (!result.success) {
         return res.status(400).json({ message: result.message });
       }
 
-      console.log(`Password reset token for ${phone}: ${result.token}`);
+      console.log(`Password reset request received for ${phone}`);
       
       res.json({ 
-        message: 'Verificação bem-sucedida',
-        token: result.token
+        message: 'Solicitação enviada ao administrador'
       });
     } catch (error) {
-      console.error('Verify and reset error:', error);
-      res.status(400).json({ message: 'Erro ao verificar informações' });
+      console.error('Request password reset error:', error);
+      res.status(400).json({ message: 'Erro ao processar solicitação' });
     }
   });
 
@@ -514,6 +469,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(400).json({ message: 'Erro ao despromover usuário' });
       }
     } catch (error) {
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  app.get("/api/admin/password-reset-requests", authenticateToken, requireAdmin, async (req: any, res) => {
+    try {
+      const requests = await storage.getPasswordResetRequests();
+      res.json(requests);
+    } catch (error) {
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  app.post("/api/admin/generate-reset-token/:userId", authenticateToken, requireAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'Usuário não encontrado' });
+      }
+
+      const result = await storage.generatePasswordResetToken(user.phone);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.message });
+      }
+
+      // Generate the reset link
+      const resetLink = `${req.protocol}://${req.get('host')}/reset-password?phone=${encodeURIComponent(user.phone)}&token=${result.token}`;
+      
+      console.log(`Password reset link for ${user.phone}: ${resetLink}`);
+      console.log(`Token expires in 15 minutes`);
+      
+      res.json({ 
+        message: 'Token gerado com sucesso',
+        token: result.token,
+        resetLink,
+        expiresIn: '15 minutos',
+        phone: user.phone,
+        email: user.email
+      });
+    } catch (error) {
+      console.error('Generate reset token error:', error);
       res.status(500).json({ message: 'Erro interno do servidor' });
     }
   });
