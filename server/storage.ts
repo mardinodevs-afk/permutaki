@@ -195,13 +195,13 @@ export const storage = {
   },
 
   async getPasswordResetRequests() {
-    // Get users who have requested password reset (resetTokenExpiry is set but resetToken is null)
+    // Get users who have requested password reset (resetPasswordExpires is set but resetPasswordToken is null)
     const requests = await db.select()
       .from(users)
       .where(
         and(
           eq(users.isActive, true),
-          isNotNull(users.resetTokenExpiry)
+          isNotNull(users.resetPasswordExpires)
         )
       );
 
@@ -211,8 +211,8 @@ export const storage = {
       lastName: user.lastName,
       phone: user.phone,
       email: user.email,
-      requestedAt: user.resetTokenExpiry,
-      hasActiveToken: !!user.resetToken
+      requestedAt: user.resetPasswordExpires,
+      hasActiveToken: !!user.resetPasswordToken
     }));
   },
 
@@ -228,8 +228,8 @@ export const storage = {
 
     await db.update(users)
       .set({
-        resetToken: token,
-        resetTokenExpiry: expiresAt
+        resetPasswordToken: token,
+        resetPasswordExpires: expiresAt
       })
       .where(eq(users.phone, phone));
 
@@ -244,15 +244,15 @@ export const storage = {
         .where(
           and(
             eq(users.phone, phone),
-            eq(users.resetToken, token)
+            eq(users.resetPasswordToken, token)
           )
         );
 
-      if (!user || !user.resetTokenExpiry) {
+      if (!user || !user.resetPasswordExpires) {
         return { valid: false };
       }
 
-      if (new Date() > user.resetTokenExpiry) {
+      if (new Date() > user.resetPasswordExpires) {
         return { valid: false };
       }
 
@@ -273,8 +273,8 @@ export const storage = {
       await db.update(users)
         .set({
           password: newPassword,
-          resetToken: null,
-          resetTokenExpiry: null
+          resetPasswordToken: null,
+          resetPasswordExpires: null
         })
         .where(eq(users.phone, phone));
 
