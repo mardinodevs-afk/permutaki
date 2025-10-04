@@ -103,10 +103,7 @@ export default function Footer() {
 
         <div className="border-t border-border mt-8 pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2025 PermutAKI. Todos os direitos reservados. • 
-            <span className="font-medium text-foreground ml-2">
-              A Permuta é GRÁTIS - Denuncie e evite burlas
-            </span>
+            © 2025 PermutAKI. Todos os direitos reservados. | Versão 1.2 (Beta 1)
           </p>
         </div>
       </div>
