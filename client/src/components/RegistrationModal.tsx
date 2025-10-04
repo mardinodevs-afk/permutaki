@@ -35,7 +35,6 @@ type FormData = {
   email: string;
   password: string;
   confirmPassword: string;
-  masterKey: string;
   agreeToTerms: boolean;
 };
 
@@ -72,7 +71,6 @@ export default function RegistrationModal({
     email: "",
     password: "",
     confirmPassword: "",
-    masterKey: "",
     agreeToTerms: false,
   });
 
@@ -95,18 +93,12 @@ export default function RegistrationModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validações antes de enviar
-    if (!formData.masterKey || formData.masterKey.length !== 6) {
-      return;
-    }
-    
     if (formData.password !== formData.confirmPassword) {
       return;
     }
     
     setIsLoading(true);
     
-    // Garantir que todos os campos estão corretos
     const registrationData = {
       firstName: formData.firstName,
       lastName: formData.lastName,
@@ -120,7 +112,6 @@ export default function RegistrationModal({
       phone: formData.phone,
       email: formData.email || "",
       password: formData.password,
-      masterKey: formData.masterKey
     };
     
     console.log("Registration data being sent:", registrationData);
@@ -399,23 +390,6 @@ export default function RegistrationModal({
                   {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="masterKey">Chave Mestra de Recuperação *</Label>
-              <Input
-                id="masterKey"
-                type="text"
-                placeholder="6 caracteres"
-                value={formData.masterKey}
-                onChange={(e) => updateFormData("masterKey", e.target.value.toUpperCase())}
-                maxLength={6}
-                data-testid="input-master-key"
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                ⚠️ Guarde esta chave num local seguro! Será necessária para recuperar a sua senha. É intransmissível.
-              </p>
             </div>
 
             <div className="flex items-center space-x-2 pt-4">
