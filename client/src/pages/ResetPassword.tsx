@@ -29,11 +29,12 @@ export default function ResetPassword() {
 
   const params = new URLSearchParams(window.location.search);
   const phone = params.get("phone") || "";
+  const tokenFromUrl = params.get("token") || "";
 
   const form = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      token: "",
+      token: tokenFromUrl,
       newPassword: "",
       confirmPassword: "",
     },

@@ -110,7 +110,8 @@ export const searchUsersSchema = z.object({
 
 // Schema for password reset request
 export const requestPasswordResetSchema = z.object({
-  phone: z.string().regex(/^\+258[0-9]{9}$/, "Número de telefone deve ser no formato +258XXXXXXXXX"),
+  phone: z.string().regex(/^\+258[0-9]{9}$/, "Número deve ser no formato +258XXXXXXXXX"),
+  confirmationDigits: z.string().optional(),
 });
 
 // Schema for password reset
