@@ -124,24 +124,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Password recovery routes
   app.post("/api/auth/request-password-reset", async (req, res) => {
     try {
-      const { phone } = req.body;
+      const { phone, masterKey } = requestPasswordResetSchema.parse(req.body);
       
       const user = await storage.getUserByPhone(phone);
       if (!user || !user.isActive) {
-        return res.status(404).json({ message: 'Usuário não encontrado' });
+        return res.status(404).json({ message: 'Telefone ou chave mestra incorretos' });
       }
 
-      // Store the request for admin to process
-      const result = await storage.createPasswordResetRequest(phone);
-      
-      if (!result.success) {
-        return res.status(400).json({ message: result.message });
+      // Verify master key (compare uppercase versions for case-insensitive match)
+      if (user.masterKey.toUpperCase() !== masterKey.toUpperCase()) {
+        return res.status(401).json({ message: 'Telefone ou chave mestra incorretos' });
       }
 
-      console.log(`Password reset request received for ${phone}`);
+      console.log(`Master key verified for ${phone}`);
       
       res.json({ 
-        message: 'Solicitação enviada ao administrador'
+        message: 'Chave mestra verificada com sucesso'
       });
     } catch (error) {
       console.error('Request password reset error:', error);
