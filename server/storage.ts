@@ -187,12 +187,12 @@ export const storage = {
     const requestedAt = new Date();
     await db.update(users)
       .set({
-        resetTokenExpiry: requestedAt // Using this field to track request time
+        resetPasswordExpires: requestedAt // Using this field to track request time
       })
       .where(eq(users.phone, phone));
 
     return { success: true };
-  }
+  },
 
   async getPasswordResetRequests() {
     // Get users who have requested password reset (resetTokenExpiry is set but resetToken is null)
@@ -214,7 +214,7 @@ export const storage = {
       requestedAt: user.resetTokenExpiry,
       hasActiveToken: !!user.resetToken
     }));
-  }
+  },
 
   async generatePasswordResetToken(phone: string) {
     const user = await this.getUserByPhone(phone);
@@ -234,7 +234,7 @@ export const storage = {
       .where(eq(users.phone, phone));
 
     return { success: true, token };
-  }
+  },
 
 
   async verifyResetToken(phone: string, token: string): Promise<{ valid: boolean; userId?: string }> {
