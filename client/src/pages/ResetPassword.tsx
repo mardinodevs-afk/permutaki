@@ -111,7 +111,7 @@ export default function ResetPassword() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
                 <p className="text-xs text-blue-900 dark:text-blue-100">
-                  Token de recuperação válido. Este link expira em 15 minutos.
+                  Token de recuperação válido. Este link expira em 1 hora.
                 </p>
               </div>
               
