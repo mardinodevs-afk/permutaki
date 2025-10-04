@@ -17,8 +17,9 @@ export default function Hero({ onLoginClick, onRegisterClick }: HeroProps) {
         backgroundRepeat: 'no-repeat'
       }}
     >
-      <div className="max-w-4xl mx-auto text-white z-10">
-        <h1 className="text-4xl md:text-6xl font-bold mb-6">
+      <div className="max-w-6xl mx-auto px-4 text-center py-24">
+        <img src="/logo.png" alt="Permutaki Logo" className="w-32 h-32 mx-auto mb-8" />
+        <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
           Permutaki
         </h1>
         <p className="text-xl md:text-2xl mb-4 font-medium">
@@ -27,7 +28,7 @@ export default function Hero({ onLoginClick, onRegisterClick }: HeroProps) {
         <p className="text-lg md:text-xl mb-8 opacity-90 max-w-2xl mx-auto">
           Plataforma gratuita para funcionários públicos de Moçambique encontrarem parceiros compatíveis para transferência por permuta de forma segura.
         </p>
-        
+
         <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
           <Button
             size="lg"

@@ -124,23 +124,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Password recovery routes
   app.post("/api/auth/request-password-reset", async (req, res) => {
     try {
-      const { phone } = requestPasswordResetSchema.parse(req.body);
+      const { phone } = req.body;
       
-      const result = await storage.requestPasswordReset(phone);
+      const user = await storage.getUserByPhone(phone);
+      if (!user || !user.isActive) {
+        return res.status(404).json({ message: 'Usuário não encontrado' });
+      }
+
+      // Store the request for admin to process
+      const result = await storage.createPasswordResetRequest(phone);
       
       if (!result.success) {
         return res.status(400).json({ message: result.message });
       }
 
-      console.log(`Password reset code for ${phone}: ${result.token}`);
+      console.log(`Password reset request received for ${phone}`);
       
       res.json({ 
-        message: 'Código de recuperação enviado. Por favor, verifique seu telefone.',
-        token: result.token
+        message: 'Solicitação enviada ao administrador'
       });
     } catch (error) {
-      console.error('Password reset request error:', error);
-      res.status(400).json({ message: 'Erro ao solicitar recuperação de senha' });
+      console.error('Request password reset error:', error);
+      res.status(400).json({ message: 'Erro ao processar solicitação' });
     }
   });
 
@@ -427,6 +432,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(400).json({ message: 'Erro ao banir usuário' });
       }
     } catch (error) {
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  app.post("/api/admin/user/:id/promote-premium", authenticateToken, requireAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { duration } = req.body; // duration in days: 7, 30, 90, 180, 365
+      
+      if (!duration || ![7, 30, 90, 180, 365].includes(duration)) {
+        return res.status(400).json({ message: 'Duração inválida' });
+      }
+
+      const result = await storage.promoteToPremium(id, duration, req.user.id);
+      
+      if (result) {
+        res.json({ message: 'Usuário promovido para Premium com sucesso' });
+      } else {
+        res.status(400).json({ message: 'Erro ao promover usuário' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  app.post("/api/admin/user/:id/demote-premium", authenticateToken, requireAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      const result = await storage.demoteFromPremium(id);
+      
+      if (result) {
+        res.json({ message: 'Usuário despromovido de Premium com sucesso' });
+      } else {
+        res.status(400).json({ message: 'Erro ao despromover usuário' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  app.get("/api/admin/password-reset-requests", authenticateToken, requireAdmin, async (req: any, res) => {
+    try {
+      const requests = await storage.getPasswordResetRequests();
+      res.json(requests);
+    } catch (error) {
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  app.post("/api/admin/generate-reset-token/:userId", authenticateToken, requireAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'Usuário não encontrado' });
+      }
+
+      const result = await storage.generatePasswordResetToken(user.phone);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.message });
+      }
+
+      // Generate the reset link
+      const resetLink = `${req.protocol}://${req.get('host')}/reset-password?phone=${encodeURIComponent(user.phone)}&token=${result.token}`;
+      
+      console.log(`Password reset link for ${user.phone}: ${resetLink}`);
+      console.log(`Token expires in 15 minutes`);
+      
+      res.json({ 
+        message: 'Token gerado com sucesso',
+        token: result.token,
+        resetLink,
+        expiresIn: '15 minutos',
+        phone: user.phone,
+        email: user.email
+      });
+    } catch (error) {
+      console.error('Generate reset token error:', error);
       res.status(500).json({ message: 'Erro interno do servidor' });
     }
   });

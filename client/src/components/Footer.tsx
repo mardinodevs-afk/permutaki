@@ -10,7 +10,10 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <h3 className="text-2xl font-bold text-primary mb-4">Permutaki</h3>
+            <div className="flex items-center gap-3 mb-4">
+              <img src="/logo.png" alt="Permutaki Logo" className="w-10 h-10" />
+              <h3 className="text-2xl font-bold text-primary">Permutaki</h3>
+            </div>
             <p className="text-muted-foreground mb-4">
               Facilitando a sua transferência por permuta de forma gratuita e segura.
             </p>
