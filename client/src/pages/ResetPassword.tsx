@@ -31,6 +31,15 @@ export default function ResetPassword() {
   const phone = params.get("phone") || "";
   const tokenFromUrl = params.get("token") || "";
 
+  if (!phone || !tokenFromUrl) {
+    toast({
+      variant: "destructive",
+      title: "Erro",
+      description: "Link inválido ou expirado",
+    });
+    setLocation("/forgot-password");
+  }
+
   const form = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {

@@ -122,25 +122,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Password recovery routes
-  app.post("/api/auth/request-password-reset", async (req, res) => {
+  app.post("/api/auth/get-verification-questions", async (req, res) => {
     try {
-      const { phone } = requestPasswordResetSchema.parse(req.body);
+      const { phone } = req.body;
       
+      const user = await storage.getUserByPhone(phone);
+      if (!user || !user.isActive) {
+        return res.status(404).json({ message: 'Usuário não encontrado' });
+      }
+
+      // Define all possible questions
+      const allQuestions = [
+        { field: 'firstName', question: 'Qual é o seu primeiro nome?', type: 'text' },
+        { field: 'lastName', question: 'Qual é o seu último nome?', type: 'text' },
+        { field: 'email', question: 'Qual é o seu email?', type: 'text' },
+        { field: 'sector', question: 'Qual é o seu sector?', type: 'select', options: ['Educação', 'Saúde', 'Administração Pública', 'Justiça', 'Outro'] },
+        { field: 'currentProvince', question: 'Qual é a sua província atual?', type: 'text' },
+        { field: 'currentDistrict', question: 'Qual é o seu distrito atual?', type: 'text' },
+        { field: 'desiredProvince', question: 'Qual é a província desejada?', type: 'text' },
+      ];
+
+      // Randomly select 2 questions
+      const shuffled = allQuestions.sort(() => 0.5 - Math.random());
+      const selectedQuestions = shuffled.slice(0, 2);
+
+      res.json({ questions: selectedQuestions });
+    } catch (error) {
+      console.error('Get verification questions error:', error);
+      res.status(400).json({ message: 'Erro ao obter perguntas de verificação' });
+    }
+  });
+
+  app.post("/api/auth/verify-and-reset", async (req, res) => {
+    try {
+      const { phone, answers } = req.body;
+      
+      const user = await storage.getUserByPhone(phone);
+      if (!user || !user.isActive) {
+        return res.status(404).json({ message: 'Usuário não encontrado' });
+      }
+
+      // Verify answers
+      let correctAnswers = 0;
+      for (const [field, answer] of Object.entries(answers)) {
+        const userValue = (user as any)[field];
+        if (userValue && userValue.toLowerCase() === (answer as string).toLowerCase()) {
+          correctAnswers++;
+        }
+      }
+
+      if (correctAnswers < 2) {
+        return res.status(400).json({ message: 'Informações incorretas' });
+      }
+
+      // Generate reset token
       const result = await storage.requestPasswordReset(phone);
       
       if (!result.success) {
         return res.status(400).json({ message: result.message });
       }
 
-      console.log(`Password reset code for ${phone}: ${result.token}`);
+      console.log(`Password reset token for ${phone}: ${result.token}`);
       
       res.json({ 
-        message: 'Código de recuperação enviado. Por favor, verifique seu telefone.',
+        message: 'Verificação bem-sucedida',
         token: result.token
       });
     } catch (error) {
-      console.error('Password reset request error:', error);
-      res.status(400).json({ message: 'Erro ao solicitar recuperação de senha' });
+      console.error('Verify and reset error:', error);
+      res.status(400).json({ message: 'Erro ao verificar informações' });
     }
   });
 

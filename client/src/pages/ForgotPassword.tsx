@@ -10,43 +10,64 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, MessageCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 
-const forgotPasswordSchema = z.object({
+const phoneSchema = z.object({
   phone: z.string().regex(/^\+258[0-9]{9}$/, "Número deve ser no formato +258XXXXXXXXX"),
-  confirmationDigits: z.string().optional(),
 });
 
-type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
+const verificationSchema = z.object({
+  answer1: z.string().min(1, "Este campo é obrigatório"),
+  answer2: z.string().min(1, "Este campo é obrigatório"),
+});
+
+type PhoneForm = z.infer<typeof phoneSchema>;
+type VerificationForm = z.infer<typeof verificationSchema>;
+
+interface VerificationQuestion {
+  field: string;
+  question: string;
+  type: 'text' | 'select';
+  options?: string[];
+}
 
 export default function ForgotPassword() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<'phone' | 'confirm'>('phone');
-  const [maskedPhone, setMaskedPhone] = useState("");
+  const [step, setStep] = useState<'phone' | 'verify'>('phone');
+  const [questions, setQuestions] = useState<VerificationQuestion[]>([]);
+  const [phone, setPhone] = useState("");
 
-  const form = useForm<ForgotPasswordForm>({
-    resolver: zodResolver(forgotPasswordSchema),
+  const phoneForm = useForm<PhoneForm>({
+    resolver: zodResolver(phoneSchema),
     defaultValues: {
       phone: "",
-      confirmationDigits: "",
     },
   });
 
-  const onSubmitPhone = async (data: ForgotPasswordForm) => {
+  const verificationForm = useForm<VerificationForm>({
+    resolver: zodResolver(verificationSchema),
+    defaultValues: {
+      answer1: "",
+      answer2: "",
+    },
+  });
+
+  const onSubmitPhone = async (data: PhoneForm) => {
     setIsLoading(true);
     try {
-      // Mask the phone number showing only last 4 digits
-      const phone = data.phone;
-      const masked = phone.substring(0, phone.length - 4).replace(/\d/g, '*') + phone.substring(phone.length - 4);
-      setMaskedPhone(masked);
+      const response = await apiRequest("/api/auth/get-verification-questions", "POST", { 
+        phone: data.phone 
+      });
       
-      setStep('confirm');
+      setPhone(data.phone);
+      setQuestions(response.questions);
+      setStep('verify');
+      
       toast({
-        title: "Confirmação necessária",
-        description: "Por favor, confirme os últimos 4 dígitos do seu número.",
+        title: "Verificação necessária",
+        description: "Por favor, confirme duas informações do seu cadastro.",
       });
     } catch (error: any) {
       toast({
@@ -59,55 +80,29 @@ export default function ForgotPassword() {
     }
   };
 
-  const onConfirmAndSend = async () => {
+  const onSubmitVerification = async (data: VerificationForm) => {
     setIsLoading(true);
     try {
-      const phone = form.getValues('phone');
-      const confirmationDigits = form.getValues('confirmationDigits');
-      
-      // Verify the last 4 digits
-      const lastFourDigits = phone.substring(phone.length - 4);
-      if (confirmationDigits !== lastFourDigits) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Os dígitos de confirmação não correspondem.",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      const response = await apiRequest("/api/auth/request-password-reset", "POST", { 
+      const response = await apiRequest("/api/auth/verify-and-reset", "POST", {
         phone,
-        confirmationDigits 
+        answers: {
+          [questions[0].field]: data.answer1,
+          [questions[1].field]: data.answer2,
+        },
       });
-      
-      // Generate WhatsApp link with reset token
-      const resetToken = response.token;
-      const resetLink = `${window.location.origin}/reset-password?phone=${encodeURIComponent(phone)}&token=${resetToken}`;
-      const whatsappMessage = encodeURIComponent(
-        `Olá! Aqui está o seu link de recuperação de senha do Permutaki:\n\n${resetLink}\n\nEste link é válido por 15 minutos.\n\nSe você não solicitou esta recuperação, ignore esta mensagem.`
-      );
-      const whatsappNumber = phone.replace('+', '');
-      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
       toast({
-        title: "Link enviado",
-        description: "O link de recuperação será enviado via WhatsApp.",
+        title: "Verificação bem-sucedida",
+        description: "Agora você pode definir uma nova senha.",
       });
 
-      // Open WhatsApp in new tab
-      window.open(whatsappUrl, '_blank');
-
-      // Redirect to reset password page after a short delay
-      setTimeout(() => {
-        setLocation(`/reset-password?phone=${encodeURIComponent(phone)}`);
-      }, 2000);
+      // Redirect to reset password page with token
+      setLocation(`/reset-password?phone=${encodeURIComponent(phone)}&token=${response.token}`);
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: error.message || "Erro ao solicitar recuperação de senha",
+        description: error.message || "Informações incorretas",
       });
     } finally {
       setIsLoading(false);
@@ -129,15 +124,15 @@ export default function ForgotPassword() {
           <CardDescription>
             {step === 'phone' 
               ? "Digite o número de telefone associado à sua conta."
-              : "Confirme os últimos 4 dígitos do seu número para receber o link de recuperação."}
+              : "Confirme duas informações do seu cadastro para verificar sua identidade."}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            {step === 'phone' ? (
-              <form onSubmit={form.handleSubmit(onSubmitPhone)} className="space-y-4">
+          {step === 'phone' ? (
+            <Form {...phoneForm}>
+              <form onSubmit={phoneForm.handleSubmit(onSubmitPhone)} className="space-y-4">
                 <FormField
-                  control={form.control}
+                  control={phoneForm.control}
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
@@ -162,70 +157,106 @@ export default function ForgotPassword() {
                   {isLoading ? "Processando..." : "Continuar"}
                 </Button>
               </form>
-            ) : (
-              <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Número cadastrado:</span>
+            </Form>
+          ) : (
+            <Form {...verificationForm}>
+              <form onSubmit={verificationForm.handleSubmit(onSubmitVerification)} className="space-y-4">
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                  <div className="flex gap-2 items-start">
+                    <ShieldCheck className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-blue-900 dark:text-blue-100">
+                      Para sua segurança, confirme as seguintes informações do seu cadastro:
+                    </p>
                   </div>
-                  <p className="text-lg font-mono">{maskedPhone}</p>
                 </div>
 
                 <FormField
-                  control={form.control}
-                  name="confirmationDigits"
+                  control={verificationForm.control}
+                  name="answer1"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Últimos 4 dígitos do número</FormLabel>
+                      <FormLabel>{questions[0]?.question}</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="0000" 
-                          maxLength={4}
-                          {...field}
-                          data-testid="input-confirmation-digits"
-                        />
+                        {questions[0]?.type === 'select' ? (
+                          <select 
+                            {...field}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            data-testid="input-answer1"
+                          >
+                            <option value="">Selecione...</option>
+                            {questions[0]?.options?.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <Input 
+                            placeholder="Digite sua resposta" 
+                            {...field}
+                            data-testid="input-answer1"
+                          />
+                        )}
                       </FormControl>
                       <FormMessage />
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Digite os últimos 4 dígitos do número de telefone cadastrado para confirmar.
-                      </p>
                     </FormItem>
                   )}
                 />
 
-                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <div className="flex gap-2 items-start">
-                    <MessageCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-blue-900 dark:text-blue-100">
-                      Após a confirmação, você receberá um link de recuperação via WhatsApp no número cadastrado.
-                    </p>
-                  </div>
-                </div>
+                <FormField
+                  control={verificationForm.control}
+                  name="answer2"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{questions[1]?.question}</FormLabel>
+                      <FormControl>
+                        {questions[1]?.type === 'select' ? (
+                          <select 
+                            {...field}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            data-testid="input-answer2"
+                          >
+                            <option value="">Selecione...</option>
+                            {questions[1]?.options?.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <Input 
+                            placeholder="Digite sua resposta" 
+                            {...field}
+                            data-testid="input-answer2"
+                          />
+                        )}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="flex gap-2">
                   <Button 
                     type="button"
                     variant="outline"
-                    onClick={() => setStep('phone')}
+                    onClick={() => {
+                      setStep('phone');
+                      verificationForm.reset();
+                    }}
                     className="w-full"
                     disabled={isLoading}
                   >
                     Voltar
                   </Button>
                   <Button 
-                    type="button"
-                    onClick={onConfirmAndSend}
+                    type="submit"
                     className="w-full" 
                     disabled={isLoading}
-                    data-testid="button-confirm-and-send"
+                    data-testid="button-verify"
                   >
-                    {isLoading ? "Enviando..." : "Enviar Link"}
+                    {isLoading ? "Verificando..." : "Verificar"}
                   </Button>
                 </div>
-              </div>
-            )}
-          </Form>
+              </form>
+            </Form>
+          )}
         </CardContent>
       </Card>
     </div>
