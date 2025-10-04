@@ -97,9 +97,7 @@ export default function RegistrationModal({
     setIsLoading(true);
     console.log("Registration data:", formData);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    // Pass complete formData including masterKey
     onRegister(formData);
     setIsLoading(false);
   };
