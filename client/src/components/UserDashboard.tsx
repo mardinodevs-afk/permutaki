@@ -444,9 +444,9 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-6">Informações do Perfil</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Coluna 1: Informações Profissionais e Localização Actual */}
-                <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Linha 1: Nome e Apelido */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
                       Nome
@@ -474,7 +474,10 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                       Não editável após registo
                     </p>
                   </div>
+                </div>
 
+                {/* Linha 2: Sector, Nível Salarial e Grau */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
                       Sector
@@ -491,7 +494,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
 
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
-                      Nível Salarial {!canEditSalaryLevel() && "(editável apenas uma vez)"}
+                      Nível Salarial
                     </label>
                     <Select 
                       value={profileData.salaryLevel.toString()} 
@@ -513,7 +516,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
 
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
-                      Grau {!canEditSalaryLevel() && "(editável apenas uma vez)"}
+                      Grau
                     </label>
                     <Select 
                       value={profileData.grade} 
@@ -532,10 +535,13 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
 
+                {/* Linha 3: Província e Distrito Actual */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
-                      Província Actual {!canEditCurrentLocation() && "(editável apenas uma vez)"}
+                      Província Actual
                     </label>
                     <Select 
                       value={profileData.currentProvince} 
@@ -543,7 +549,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                         setProfileData(prev => ({ 
                           ...prev, 
                           currentProvince: value,
-                          currentDistrict: "" // Reset district when province changes
+                          currentDistrict: ""
                         }));
                       }}
                       disabled={!canEditCurrentLocation()}
@@ -563,7 +569,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
 
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
-                      Distrito Actual {!canEditCurrentLocation() && "(editável apenas uma vez)"}
+                      Distrito Actual
                     </label>
                     <Select 
                       value={profileData.currentDistrict} 
@@ -581,20 +587,14 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                         ))}
                       </SelectContent>
                     </Select>
-                    {!canEditCurrentLocation() && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Localização já foi alterada
-                      </p>
-                    )}
                   </div>
                 </div>
 
-                {/* Coluna 2: Localização Pretendida */}
-                <div className="space-y-4">
+                {/* Linha 4: Província e Distrito Pretendido */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
-                      Província Pretendida 
-                      {currentUser?.isPremium ? " (editável uma vez por dia)" : " (editável uma vez por mês)"}
+                      Província Pretendida {currentUser?.isPremium ? "(editável uma vez por dia)" : "(editável uma vez por mês)"}
                     </label>
                     <Select 
                       value={profileData.desiredProvince} 
@@ -602,7 +602,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                         setProfileData(prev => ({ 
                           ...prev, 
                           desiredProvince: value,
-                          desiredDistrict: "" // Reset district when province changes
+                          desiredDistrict: ""
                         }));
                       }}
                       disabled={!canEditDesiredLocation()}
@@ -622,8 +622,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
 
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
-                      Distrito Pretendido 
-                      {currentUser?.isPremium ? " (editável uma vez por dia)" : " (editável uma vez por mês)"}
+                      Distrito Pretendido {currentUser?.isPremium ? "(editável uma vez por dia)" : "(editável uma vez por mês)"}
                     </label>
                     <Select 
                       value={profileData.desiredDistrict} 
@@ -641,14 +640,6 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                         ))}
                       </SelectContent>
                     </Select>
-                    {!canEditDesiredLocation() && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {currentUser?.isPremium 
-                          ? "Próxima edição disponível amanhã" 
-                          : "Próxima edição disponível em: [data calculada]"
-                        }
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>
