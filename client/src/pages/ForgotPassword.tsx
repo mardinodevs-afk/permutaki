@@ -102,7 +102,6 @@ export default function ForgotPassword() {
         description: "Agora você pode definir uma nova senha.",
       });
 
-      // Redirect to reset password page with token
       setLocation(`/reset-password?phone=${encodeURIComponent(phone)}&token=${response.token}`);
     } catch (error: any) {
       toast({
