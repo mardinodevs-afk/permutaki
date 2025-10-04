@@ -15,12 +15,13 @@ interface UserCardProps {
   desiredLocation: string;
   rating: number;
   reviewCount: number;
-  isPriorityMatch?: boolean;
-  avatarUrl?: string;
+  isPriorityMatch: boolean;
   canContact: boolean;
-  onWhatsAppContact: (userId: string) => void;
-  onReport: (userId: string) => void;
-  onRate: (userId: string) => void;
+  compatibility?: number;
+  whatsappNumber?: string;
+  onWhatsAppContact: (id: string) => void;
+  onReport: (id: string) => void;
+  onRate: (id: string) => void;
 }
 
 export default function UserCard({
@@ -34,12 +35,21 @@ export default function UserCard({
   rating,
   reviewCount,
   isPriorityMatch = false,
-  avatarUrl,
   canContact,
+  compatibility = 0,
+  whatsappNumber,
   onWhatsAppContact,
   onReport,
-  onRate
+  onRate,
 }: UserCardProps) {
+  const handleWhatsAppClick = () => {
+    if (whatsappNumber && canContact) {
+      const message = encodeURIComponent(`Olá! Encontrei seu perfil no PermutAKI e gostaria de conversar sobre uma possível permuta.`);
+      window.open(`https://wa.me/${whatsappNumber.replace(/\D/g, '')}?text=${message}`, '_blank');
+      onWhatsAppContact(id);
+    }
+  };
+
   return (
     <Card className={`p-4 hover-elevate ${isPriorityMatch ? 'ring-2 ring-primary' : ''}`}>
       {isPriorityMatch && (
@@ -61,7 +71,7 @@ export default function UserCard({
           <h3 className="font-semibold text-foreground truncate" data-testid={`text-name-${id}`}>
             {name}
           </h3>
-          
+
           <div className="flex items-center gap-2 mt-1 mb-2">
             <Badge variant="secondary" className="text-xs">
               {sector}
@@ -93,12 +103,12 @@ export default function UserCard({
             <div className="flex gap-2">
               <Button
                 size="sm"
-                onClick={() => onWhatsAppContact(id)}
-                disabled={!canContact}
-                data-testid={`button-whatsapp-${id}`}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-green-600 hover:bg-green-700"
+                onClick={handleWhatsAppClick}
+                disabled={!canContact || !whatsappNumber}
+                data-testid="button-whatsapp-contact"
               >
-                <MessageCircle className="h-3 w-3 mr-1" />
+                <MessageCircle className="h-4 w-4 mr-2" />
                 WhatsApp
               </Button>
             </div>

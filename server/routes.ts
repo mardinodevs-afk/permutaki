@@ -329,6 +329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentDistrict: user.currentDistrict,
         desiredProvince: user.desiredProvince,
         desiredDistrict: user.desiredDistrict,
+        phone: user.phone,
         rating: 0, // TODO: Calculate from ratings table
         reviewCount: 0 // TODO: Calculate from ratings table
       }));

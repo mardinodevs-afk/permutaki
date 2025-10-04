@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +23,43 @@ type User = {
 function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const verifyToken = async () => {
+      setIsLoading(true);
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const profileResponse = await fetch('/api/user/profile', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (profileResponse.ok) {
+            const userData = await profileResponse.json();
+            const user: User = {
+              id: userData.id,
+              name: `${userData.firstName} ${userData.lastName}`,
+              phone: userData.phone,
+              isAdmin: userData.isAdmin || false
+            };
+            setCurrentUser(user);
+          } else {
+            // Token is invalid or expired
+            localStorage.removeItem('token');
+          }
+        } catch (error) {
+          console.error("Error verifying token:", error);
+          localStorage.removeItem('token');
+        }
+      }
+      setIsLoading(false);
+    };
+
+    verifyToken();
+  }, []);
+
 
   const handleLogin = async (phone: string, password: string) => {
     setIsLoading(true);
@@ -120,7 +157,16 @@ function App() {
     setCurrentUser(null);
   };
 
-  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

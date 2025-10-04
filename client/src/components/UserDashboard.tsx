@@ -45,6 +45,7 @@ interface SearchUser {
   currentDistrict: string;
   desiredProvince: string;
   desiredDistrict: string;
+  phone: string;
   rating?: number;
   reviewCount?: number;
 }
@@ -121,6 +122,38 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
 
     loadUserData();
   }, []);
+
+  // Calculate compatibility percentage
+  const calculateCompatibility = (user: SearchUser): number => {
+    if (!currentUser) return 0;
+    
+    let score = 0;
+    
+    // Perfect match: their desired = my current AND my desired = their current
+    if (user.desiredProvince === currentUser.currentProvince && 
+        user.desiredDistrict === currentUser.currentDistrict &&
+        currentUser.desiredProvince === user.currentProvince &&
+        currentUser.desiredDistrict === user.currentDistrict) {
+      score += 50;
+    }
+    
+    // Same sector
+    if (user.sector === currentUser.sector) {
+      score += 20;
+    }
+    
+    // Same salary level
+    if (user.salaryLevel === currentUser.salaryLevel) {
+      score += 15;
+    }
+    
+    // Same grade
+    if (user.grade === currentUser.grade) {
+      score += 15;
+    }
+    
+    return Math.min(100, score);
+  };
 
   // Load search results
   useEffect(() => {
@@ -382,7 +415,9 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                     desiredLocation={`${user.desiredProvince}, ${user.desiredDistrict}`}
                     rating={user.rating || 0}
                     reviewCount={user.reviewCount || 0}
-                    isPriorityMatch={false}
+                    isPriorityMatch={calculateCompatibility(user) >= 80}
+                    compatibility={calculateCompatibility(user)}
+                    whatsappNumber={user.phone}
                     canContact={currentUser ? (currentUser.whatsappContactsToday < (currentUser.isPremium ? 10 : 2)) : false}
                     onWhatsAppContact={handleWhatsAppContact}
                     onReport={handleReportUser}
@@ -645,7 +680,74 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
               </div>
 
               <div className="mt-6">
-                <Button data-testid="button-save-profile">
+                <Button 
+                  onClick={async () => {
+                    try {
+                      const token = localStorage.getItem('token');
+                      
+                      // Update salary level
+                      const salaryResponse = await fetch('/api/user/salary', {
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({
+                          salaryLevel: profileData.salaryLevel,
+                          grade: profileData.grade,
+                        }),
+                      });
+
+                      // Update current location
+                      const currentLocationResponse = await fetch('/api/user/location', {
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({
+                          type: 'current',
+                          province: profileData.currentProvince,
+                          district: profileData.currentDistrict,
+                        }),
+                      });
+
+                      // Update desired location
+                      const desiredLocationResponse = await fetch('/api/user/location', {
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({
+                          type: 'desired',
+                          province: profileData.desiredProvince,
+                          district: profileData.desiredDistrict,
+                        }),
+                      });
+
+                      if (salaryResponse.ok && currentLocationResponse.ok && desiredLocationResponse.ok) {
+                        alert('Perfil atualizado com sucesso!');
+                        // Reload user data
+                        const response = await fetch('/api/user/profile', {
+                          headers: {
+                            'Authorization': `Bearer ${token}`,
+                          },
+                        });
+                        if (response.ok) {
+                          const userData = await response.json();
+                          setCurrentUser(userData);
+                        }
+                      } else {
+                        const error = await salaryResponse.json();
+                        alert(error.message || 'Erro ao atualizar perfil');
+                      }
+                    } catch (error) {
+                      alert('Erro de conexão');
+                    }
+                  }}
+                  data-testid="button-save-profile"
+                >
                   Guardar Alterações
                 </Button>
               </div>
