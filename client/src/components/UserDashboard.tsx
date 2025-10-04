@@ -445,8 +445,66 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
               <h3 className="text-lg font-semibold mb-6">Informações do Perfil</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Coluna 1: Localização Actual */}
+                {/* Coluna 1: Informações Profissionais e Localização Actual */}
                 <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Sector
+                    </label>
+                    <Input 
+                      value={currentUser?.sector || ""} 
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Não editável após registo
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Nível Salarial {!canEditSalaryLevel() && "(editável apenas uma vez)"}
+                    </label>
+                    <Select 
+                      value={profileData.salaryLevel.toString()} 
+                      onValueChange={(value) => setProfileData(prev => ({ ...prev, salaryLevel: parseInt(value) }))}
+                      disabled={!canEditSalaryLevel()}
+                    >
+                      <SelectTrigger data-testid="select-profile-salary-level">
+                        <SelectValue placeholder="Selecione o nível" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 21 }, (_, i) => i + 1).map((level) => (
+                          <SelectItem key={level} value={level.toString()}>
+                            Nível {level}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Grau {!canEditSalaryLevel() && "(editável apenas uma vez)"}
+                    </label>
+                    <Select 
+                      value={profileData.grade} 
+                      onValueChange={(value) => setProfileData(prev => ({ ...prev, grade: value }))}
+                      disabled={!canEditSalaryLevel()}
+                    >
+                      <SelectTrigger data-testid="select-profile-grade">
+                        <SelectValue placeholder="Selecione o grau" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="A">Grau A</SelectItem>
+                        <SelectItem value="B">Grau B</SelectItem>
+                        <SelectItem value="C">Grau C</SelectItem>
+                        <SelectItem value="D">Grau D</SelectItem>
+                        <SelectItem value="E">Grau E</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
                       Província Actual {!canEditCurrentLocation() && "(editável apenas uma vez)"}
