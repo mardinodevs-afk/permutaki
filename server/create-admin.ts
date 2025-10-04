@@ -7,7 +7,7 @@ async function createAdminUser() {
     // Administrador Principal (Oculto)
     const adminData = {
       firstName: "Administrador",
-      lastName: "Oculto",
+      lastName: "PermutAKI",
       sector: "Administração do Sistema",
       salaryLevel: 21,
       grade: "A",
@@ -26,7 +26,7 @@ async function createAdminUser() {
     // Assistente de Permuta (Oculto)
     const assistantData = {
       firstName: "Assistente",
-      lastName: "Permuta",
+      lastName: "PermutAKI",
       sector: "Gestão de Permutas",
       salaryLevel: 21,
       grade: "A",
