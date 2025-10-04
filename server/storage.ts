@@ -183,11 +183,12 @@ export const storage = {
       return { success: false, message: 'Usuário não encontrado' };
     }
 
-    // Just mark that a request was made
     const requestedAt = new Date();
     await db.update(users)
       .set({
-        resetPasswordExpires: requestedAt // Using this field to track request time
+        resetPasswordRequestedAt: requestedAt,
+        resetPasswordToken: null,
+        resetPasswordExpires: null
       })
       .where(eq(users.phone, phone));
 
@@ -195,15 +196,15 @@ export const storage = {
   },
 
   async getPasswordResetRequests() {
-    // Get users who have requested password reset (resetPasswordExpires is set but resetPasswordToken is null)
     const requests = await db.select()
       .from(users)
       .where(
         and(
           eq(users.isActive, true),
-          isNotNull(users.resetPasswordExpires)
+          isNotNull(users.resetPasswordRequestedAt)
         )
-      );
+      )
+      .orderBy(desc(users.resetPasswordRequestedAt));
 
     return requests.map(user => ({
       id: user.id,
@@ -211,29 +212,49 @@ export const storage = {
       lastName: user.lastName,
       phone: user.phone,
       email: user.email,
-      requestedAt: user.resetPasswordExpires,
-      hasActiveToken: !!user.resetPasswordToken
+      requestedAt: user.resetPasswordRequestedAt,
+      hasActiveToken: !!user.resetPasswordToken && user.resetPasswordExpires && new Date() < user.resetPasswordExpires,
+      lastTokenGeneratedAt: user.lastResetTokenGeneratedAt
     }));
   },
 
-  async generatePasswordResetToken(phone: string) {
+  async generatePasswordResetToken(phone: string, userId: string) {
     const user = await this.getUserByPhone(phone);
     if (!user || !user.isActive) {
       return { success: false, message: 'Usuário não encontrado' };
     }
 
-    // Generate 6-digit token
-    const token = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    if (!user.resetPasswordRequestedAt) {
+      return { success: false, message: 'Nenhuma solicitação de recuperação encontrada' };
+    }
+
+    // Check if admin already generated a token today
+    if (user.lastResetTokenGeneratedAt) {
+      const lastGenerated = new Date(user.lastResetTokenGeneratedAt);
+      const now = new Date();
+      const timeDiff = now.getTime() - lastGenerated.getTime();
+      const hoursDiff = timeDiff / (1000 * 3600);
+      
+      if (hoursDiff < 24) {
+        return { 
+          success: false, 
+          message: 'Token já foi gerado hoje. Apenas 1 token por dia é permitido.' 
+        };
+      }
+    }
+
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const now = new Date();
 
     await db.update(users)
       .set({
-        resetPasswordToken: token,
-        resetPasswordExpires: expiresAt
+        resetPasswordToken: userId,
+        resetPasswordExpires: expiresAt,
+        lastResetTokenGeneratedAt: now
       })
       .where(eq(users.phone, phone));
 
-    return { success: true, token };
+    return { success: true, userId, expiresAt };
   },
 
 

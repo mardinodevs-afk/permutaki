@@ -128,30 +128,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Password recovery routes
   app.post("/api/auth/request-password-reset", async (req, res) => {
     try {
-      const { phone, masterKey } = requestPasswordResetSchema.parse(req.body);
+      const { phone } = requestPasswordResetSchema.parse(req.body);
       
       const user = await storage.getUserByPhone(phone);
       if (!user || !user.isActive) {
-        return res.status(404).json({ message: 'Telefone ou chave mestra incorretos' });
+        return res.status(404).json({ message: 'Telefone não encontrado' });
       }
 
-      // Verify master key (compare uppercase versions for case-insensitive match)
-      if (user.masterKey.toUpperCase() !== masterKey.toUpperCase()) {
-        return res.status(401).json({ message: 'Telefone ou chave mestra incorretos' });
+      // Check if user already has a request from today
+      if (user.resetPasswordRequestedAt) {
+        const requestedDate = new Date(user.resetPasswordRequestedAt);
+        const now = new Date();
+        const timeDiff = now.getTime() - requestedDate.getTime();
+        const hoursDiff = timeDiff / (1000 * 3600);
+        
+        if (hoursDiff < 24) {
+          return res.status(429).json({ 
+            message: 'Você já solicitou recuperação de senha hoje. Tente novamente amanhã.' 
+          });
+        }
       }
 
-      // Generate a short-lived reset token (15 minutes)
-      const resetToken = jwt.sign(
-        { userId: user.id, phone: user.phone, purpose: 'password_reset' },
-        JWT_SECRET,
-        { expiresIn: '15m' }
-      );
+      const result = await storage.createPasswordResetRequest(phone);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.message });
+      }
 
-      console.log(`Master key verified for ${phone}, reset token issued`);
+      console.log(`Password reset requested for ${phone}`);
       
       res.json({ 
-        message: 'Chave mestra verificada com sucesso',
-        resetToken
+        message: 'Solicitação enviada com sucesso. O administrador receberá sua solicitação.'
       });
     } catch (error) {
       console.error('Request password reset error:', error);
@@ -547,23 +554,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Usuário não encontrado' });
       }
 
-      const result = await storage.generatePasswordResetToken(user.phone);
+      const result = await storage.generatePasswordResetToken(user.phone, user.id);
       
       if (!result.success) {
         return res.status(400).json({ message: result.message });
       }
 
+      // Generate JWT token with 1-hour expiry
+      const resetToken = jwt.sign(
+        { userId: user.id, phone: user.phone, purpose: 'password_reset' },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
       // Generate the reset link
-      const resetLink = `${req.protocol}://${req.get('host')}/reset-password?phone=${encodeURIComponent(user.phone)}&token=${result.token}`;
+      const resetLink = `${req.protocol}://${req.get('host')}/reset-password?token=${encodeURIComponent(resetToken)}`;
       
       console.log(`Password reset link for ${user.phone}: ${resetLink}`);
-      console.log(`Token expires in 15 minutes`);
+      console.log(`Token expires in 1 hour`);
       
       res.json({ 
         message: 'Token gerado com sucesso',
-        token: result.token,
         resetLink,
-        expiresIn: '15 minutos',
+        expiresAt: result.expiresAt,
+        expiresIn: '1 hora',
         phone: user.phone,
         email: user.email
       });
