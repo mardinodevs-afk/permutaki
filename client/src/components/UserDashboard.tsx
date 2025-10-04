@@ -445,200 +445,125 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
               <h3 className="text-lg font-semibold mb-6">Informações do Perfil</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Coluna 1: Localização Actual */}
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Nome (não editável)</label>
-                    <Input 
-                      value={currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : ""} 
-                      disabled
-                      data-testid="input-profile-name"
-                    />
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Província Actual {!canEditCurrentLocation() && "(editável apenas uma vez)"}
+                    </label>
+                    <Select 
+                      value={profileData.currentProvince} 
+                      onValueChange={(value) => {
+                        setProfileData(prev => ({ 
+                          ...prev, 
+                          currentProvince: value,
+                          currentDistrict: "" // Reset district when province changes
+                        }));
+                      }}
+                      disabled={!canEditCurrentLocation()}
+                    >
+                      <SelectTrigger data-testid="select-profile-current-province">
+                        <SelectValue placeholder="Selecione a província" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.keys(mozambiqueData).map((province) => (
+                          <SelectItem key={province} value={province}>
+                            {province}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Sector (não editável)</label>
-                    <Input 
-                      value={currentUser?.sector || ""} 
-                      disabled
-                      data-testid="input-profile-sector"
-                    />
-                  </div>
-                  
+
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
-                      Nível Salarial {!canEditSalaryLevel() && "(editável de 2 em 2 anos)"}
+                      Distrito Actual {!canEditCurrentLocation() && "(editável apenas uma vez)"}
                     </label>
-                    <div className="flex gap-2">
-                      <Input 
-                        type="number"
-                        min="1"
-                        max="21"
-                        value={profileData.salaryLevel} 
-                        disabled={!canEditSalaryLevel()}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, salaryLevel: parseInt(e.target.value) }))}
-                        data-testid="input-profile-salary-level"
-                        className="flex-1"
-                      />
-                      <Select 
-                        value={profileData.grade}
-                        onValueChange={(value) => setProfileData(prev => ({ ...prev, grade: value }))}
-                        disabled={!canEditSalaryLevel()}
-                      >
-                        <SelectTrigger className="w-20">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="A">A</SelectItem>
-                          <SelectItem value="B">B</SelectItem>
-                          <SelectItem value="C">C</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {!canEditSalaryLevel() && (
+                    <Select 
+                      value={profileData.currentDistrict} 
+                      onValueChange={(value) => setProfileData(prev => ({ ...prev, currentDistrict: value }))}
+                      disabled={!canEditCurrentLocation() || !profileData.currentProvince}
+                    >
+                      <SelectTrigger data-testid="select-profile-current-district">
+                        <SelectValue placeholder="Selecione o distrito" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getCurrentDistricts(profileData.currentProvince).map((district) => (
+                          <SelectItem key={district} value={district}>
+                            {district}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {!canEditCurrentLocation() && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Próxima edição disponível em: [data calculada]
+                        Localização já foi alterada
                       </p>
                     )}
                   </div>
                 </div>
 
+                {/* Coluna 2: Localização Pretendida */}
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Contacto WhatsApp (não editável)</label>
-                    <Input 
-                      value={currentUser?.phone || ""} 
-                      disabled
-                      data-testid="input-profile-phone"
-                    />
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Província Pretendida 
+                      {currentUser?.isPremium ? " (editável uma vez por dia)" : " (editável uma vez por mês)"}
+                    </label>
+                    <Select 
+                      value={profileData.desiredProvince} 
+                      onValueChange={(value) => {
+                        setProfileData(prev => ({ 
+                          ...prev, 
+                          desiredProvince: value,
+                          desiredDistrict: "" // Reset district when province changes
+                        }));
+                      }}
+                      disabled={!canEditDesiredLocation()}
+                    >
+                      <SelectTrigger data-testid="select-profile-desired-province">
+                        <SelectValue placeholder="Selecione a província" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.keys(mozambiqueData).map((province) => (
+                          <SelectItem key={province} value={province}>
+                            {province}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  
+
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">E-mail</label>
-                    <Input 
-                      value={currentUser?.email || ""} 
-                      disabled
-                      data-testid="input-profile-email"
-                    />
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Distrito Pretendido 
+                      {currentUser?.isPremium ? " (editável uma vez por dia)" : " (editável uma vez por mês)"}
+                    </label>
+                    <Select 
+                      value={profileData.desiredDistrict} 
+                      onValueChange={(value) => setProfileData(prev => ({ ...prev, desiredDistrict: value }))}
+                      disabled={!canEditDesiredLocation() || !profileData.desiredProvince}
+                    >
+                      <SelectTrigger data-testid="select-profile-desired-district">
+                        <SelectValue placeholder="Selecione o distrito" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getCurrentDistricts(profileData.desiredProvince).map((district) => (
+                          <SelectItem key={district} value={district}>
+                            {district}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {!canEditDesiredLocation() && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {currentUser?.isPremium 
+                          ? "Próxima edição disponível amanhã" 
+                          : "Próxima edição disponível em: [data calculada]"
+                        }
+                      </p>
+                    )}
                   </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">
-                        Província Actual {!canEditCurrentLocation() && "(editável apenas uma vez)"}
-                      </label>
-                      <Select 
-                        value={profileData.currentProvince} 
-                        onValueChange={(value) => {
-                          setProfileData(prev => ({ 
-                            ...prev, 
-                            currentProvince: value,
-                            currentDistrict: "" // Reset district when province changes
-                          }));
-                        }}
-                        disabled={!canEditCurrentLocation()}
-                      >
-                        <SelectTrigger data-testid="select-profile-current-province">
-                          <SelectValue placeholder="Selecione a província" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.keys(mozambiqueData).map((province) => (
-                            <SelectItem key={province} value={province}>
-                              {province}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">
-                        Distrito Actual {!canEditCurrentLocation() && "(editável apenas uma vez)"}
-                      </label>
-                      <Select 
-                        value={profileData.currentDistrict} 
-                        onValueChange={(value) => setProfileData(prev => ({ ...prev, currentDistrict: value }))}
-                        disabled={!canEditCurrentLocation() || !profileData.currentProvince}
-                      >
-                        <SelectTrigger data-testid="select-profile-current-district">
-                          <SelectValue placeholder="Selecione o distrito" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getCurrentDistricts(profileData.currentProvince).map((district) => (
-                            <SelectItem key={district} value={district}>
-                              {district}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {!canEditCurrentLocation() && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Localização já foi alterada
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Província Pretendida 
-                    {currentUser?.isPremium ? " (editável uma vez por dia)" : " (editável uma vez por mês)"}
-                  </label>
-                  <Select 
-                    value={profileData.desiredProvince} 
-                    onValueChange={(value) => {
-                      setProfileData(prev => ({ 
-                        ...prev, 
-                        desiredProvince: value,
-                        desiredDistrict: "" // Reset district when province changes
-                      }));
-                    }}
-                    disabled={!canEditDesiredLocation()}
-                  >
-                    <SelectTrigger data-testid="select-profile-desired-province">
-                      <SelectValue placeholder="Selecione a província" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.keys(mozambiqueData).map((province) => (
-                        <SelectItem key={province} value={province}>
-                          {province}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Distrito Pretendido 
-                    {currentUser?.isPremium ? " (editável uma vez por dia)" : " (editável uma vez por mês)"}
-                  </label>
-                  <Select 
-                    value={profileData.desiredDistrict} 
-                    onValueChange={(value) => setProfileData(prev => ({ ...prev, desiredDistrict: value }))}
-                    disabled={!canEditDesiredLocation() || !profileData.desiredProvince}
-                  >
-                    <SelectTrigger data-testid="select-profile-desired-district">
-                      <SelectValue placeholder="Selecione o distrito" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getCurrentDistricts(profileData.desiredProvince).map((district) => (
-                        <SelectItem key={district} value={district}>
-                          {district}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {!canEditDesiredLocation() && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {currentUser?.isPremium 
-                        ? "Próxima edição disponível amanhã" 
-                        : "Próxima edição disponível em: [data calculada]"
-                      }
-                    </p>
-                  )}
                 </div>
               </div>
 
