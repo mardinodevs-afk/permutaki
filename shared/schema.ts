@@ -23,6 +23,7 @@ export const users = pgTable("users", {
   email: text("email"),
   // Security
   password: text("password").notNull(),
+  masterKey: text("master_key").notNull(),
   resetPasswordToken: text("reset_password_token"),
   resetPasswordExpires: timestamp("reset_password_expires"),
   // Profile settings
@@ -88,10 +89,12 @@ export const insertUserSchema = createInsertSchema(users).pick({
   phone: true,
   email: true,
   password: true,
+  masterKey: true,
 }).extend({
   phone: z.string().regex(/^\+258[0-9]{9}$/, "Número de telefone deve ser no formato +258XXXXXXXXX"),
   email: z.string().email().optional().or(z.literal("")),
   password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres"),
+  masterKey: z.string().length(6, "Chave mestra deve ter exatamente 6 caracteres"),
 });
 
 // Schema for user login
@@ -113,7 +116,7 @@ export const searchUsersSchema = z.object({
 // Schema for password reset request
 export const requestPasswordResetSchema = z.object({
   phone: z.string().regex(/^\+258[0-9]{9}$/, "Número deve ser no formato +258XXXXXXXXX"),
-  confirmationDigits: z.string().optional(),
+  masterKey: z.string().length(6, "Chave mestra deve ter exatamente 6 caracteres"),
 });
 
 // Schema for password reset
