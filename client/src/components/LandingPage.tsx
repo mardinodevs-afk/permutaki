@@ -31,7 +31,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
       avatarUrl: testimonial1
     },
     {
-      name: "João Machel", 
+      name: "João Machel",
       role: "Enfermeiro",
       location: "Beira → Pemba",
       rating: 4,
@@ -41,7 +41,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
     {
       name: "Ana Chimoio",
       role: "Administrativa",
-      location: "Tete → Quelimane", 
+      location: "Tete → Quelimane",
       rating: 5,
       testimonial: "Plataforma segura e confiável. Consegui verificar todos os detalhes antes de fazer o contacto.",
       avatarUrl: testimonial3
@@ -71,7 +71,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
       </header>
 
       {/* Hero Section */}
-      <Hero 
+      <Hero
         onLoginClick={() => setShowLoginModal(true)}
         onRegisterClick={() => setShowRegistrationModal(true)}
       />
@@ -84,7 +84,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
               Porque escolher o Permutaki?
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Oferecemos a plataforma mais segura e eficiente para funcionários públicos 
+              Oferecemos a plataforma mais segura e eficiente para funcionários públicos
               encontrarem parceiros para transferência por permuta.
             </p>
           </div>

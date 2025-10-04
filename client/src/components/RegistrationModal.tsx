@@ -106,24 +106,24 @@ export default function RegistrationModal({
     
     setIsLoading(true);
     
-    // Garantir que masterKey está sendo enviado
+    // Garantir que todos os campos estão corretos
     const registrationData = {
       firstName: formData.firstName,
       lastName: formData.lastName,
       sector: formData.sector,
-      salaryLevel: formData.salaryLevel,
+      salaryLevel: parseInt(formData.salaryLevel),
       grade: formData.grade,
       currentProvince: formData.currentProvince,
       currentDistrict: formData.currentDistrict,
       desiredProvince: formData.desiredProvince,
       desiredDistrict: formData.desiredDistrict,
       phone: formData.phone,
-      email: formData.email,
+      email: formData.email || "",
       password: formData.password,
       masterKey: formData.masterKey
     };
     
-    console.log("Registration data:", registrationData);
+    console.log("Registration data being sent:", registrationData);
     onRegister(registrationData);
     setIsLoading(false);
   };
