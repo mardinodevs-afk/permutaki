@@ -4,31 +4,30 @@ import bcrypt from "bcryptjs";
 
 async function createAdminUser() {
   try {
-    // Admin principal
+    // Administrador Principal (Oculto)
     const adminData = {
       firstName: "Administrador",
-      lastName: "Sistema",
-      sector: "Administração",
+      lastName: "PermutAKI",
+      sector: "Administração do Sistema",
       salaryLevel: 21,
       grade: "A",
       currentProvince: "Maputo Cidade",
-      currentDistrict: "Matola",
+      currentDistrict: "KaMpfumo",
       desiredProvince: "Maputo Cidade", 
-      desiredDistrict: "Matola",
+      desiredDistrict: "KaMpfumo",
       phone: "+258840000000",
       email: "admin@permutaki.mz",
-      password: await bcrypt.hash("Admin@123", 10),
-      masterKey: "ADM123",
+      password: await bcrypt.hash("Admin@2025", 10),
       isAdmin: true,
       isPremium: true,
       isActive: true
     };
 
-    // Admin oculto para permutas
-    const hiddenAdminData = {
-      firstName: "Coordenador",
-      lastName: "Permutas",
-      sector: "Recursos Humanos",
+    // Assistente de Permuta (Oculto)
+    const assistantData = {
+      firstName: "Assistente",
+      lastName: "PermutAKI",
+      sector: "Gestão de Permutas",
       salaryLevel: 21,
       grade: "A",
       currentProvince: "Maputo Cidade",
@@ -36,9 +35,8 @@ async function createAdminUser() {
       desiredProvince: "Maputo Cidade", 
       desiredDistrict: "KaMpfumo",
       phone: "+258870000001",
-      email: "permutas@permutaki.mz",
-      password: await bcrypt.hash("Permuta@2025", 10),
-      masterKey: "PRM258",
+      email: "assistente@permutaki.mz",
+      password: await bcrypt.hash("Assistente@2025", 10),
       isAdmin: true,
       isPremium: true,
       isActive: true
@@ -48,40 +46,38 @@ async function createAdminUser() {
     const existingAdmin = await storage.getUserByPhone(adminData.phone);
     if (!existingAdmin) {
       const newAdmin = await storage.insertUser(adminData);
-      console.log("✓ Administrador principal criado!");
+      console.log("✓ Administrador Principal criado!");
       console.log("  Telefone:", newAdmin.phone);
-      console.log("  Senha: Admin@123");
-      console.log("  Chave Mestra:", adminData.masterKey);
+      console.log("  Senha: Admin@2025");
     } else {
-      console.log("✓ Administrador principal já existe");
+      console.log("✓ Administrador Principal já existe");
       console.log("  Telefone:", adminData.phone);
-      console.log("  Senha: Admin@123");
+      console.log("  Senha: Admin@2025");
     }
 
-    // Check if hidden admin already exists
-    const existingHiddenAdmin = await storage.getUserByPhone(hiddenAdminData.phone);
-    if (!existingHiddenAdmin) {
-      const newHiddenAdmin = await storage.insertUser(hiddenAdminData);
-      console.log("\n✓ Admin Oculto de Permutas criado!");
-      console.log("  Telefone:", newHiddenAdmin.phone);
-      console.log("  Senha: Permuta@2025");
-      console.log("  Chave Mestra:", hiddenAdminData.masterKey);
+    // Check if assistant admin already exists
+    const existingAssistant = await storage.getUserByPhone(assistantData.phone);
+    if (!existingAssistant) {
+      const newAssistant = await storage.insertUser(assistantData);
+      console.log("\n✓ Assistente de Permuta criado!");
+      console.log("  Telefone:", newAssistant.phone);
+      console.log("  Senha: Assistente@2025");
     } else {
-      console.log("\n✓ Admin Oculto de Permutas já existe");
-      console.log("  Telefone:", hiddenAdminData.phone);
-      console.log("  Senha: Permuta@2025");
+      console.log("\n✓ Assistente de Permuta já existe");
+      console.log("  Telefone:", assistantData.phone);
+      console.log("  Senha: Assistente@2025"025");
     }
 
     console.log("\n=== CREDENCIAIS DE ACESSO ===");
-    console.log("\nAdmin Principal:");
+    console.log("\n🔐 Administrador Principal (Oculto):");
     console.log("  Telefone: +258840000000");
-    console.log("  Senha: Admin@123");
-    console.log("  Chave Mestra: ADM123");
+    console.log("  Senha: Admin@2025");
+    console.log("  Nota: Não participa nas permutas");
     
-    console.log("\nAdmin Oculto (Permutas):");
+    console.log("\n🔐 Assistente de Permuta (Oculto):");
     console.log("  Telefone: +258870000001");
-    console.log("  Senha: Permuta@2025");
-    console.log("  Chave Mestra: PRM258");
+    console.log("  Senha: Assistente@2025");
+    console.log("  Nota: Não participa nas permutas");
     
   } catch (error) {
     console.error("Erro ao criar usuários administradores:", error);
