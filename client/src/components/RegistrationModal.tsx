@@ -320,7 +320,7 @@ export default function RegistrationModal({
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+258 84 123 4567"
+                placeholder="+25884xxxxxxxx"
                 value={formData.phone}
                 onChange={(e) => updateFormData("phone", e.target.value)}
                 data-testid="input-phone"
