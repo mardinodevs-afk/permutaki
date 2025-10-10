@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { Eye, EyeOff, Phone, Lock } from "lucide-react";
-import { Link } from "wouter";
+
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -54,7 +54,7 @@ export default function LoginModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="phone">Número de Telefone</Label>
+            <Label htmlFor="phone">Número de Telefone(SEM ESPAÇOS)</Label>
             <div className="relative">
               <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -94,15 +94,14 @@ export default function LoginModal({
               </button>
             </div>
             <div className="text-right">
-              <Link href="/forgot-password">
-                <a 
-                  className="text-sm text-primary hover:underline" 
-                  data-testid="link-forgot-password"
-                  onClick={onClose}
-                >
-                  Esqueci minha senha
-                </a>
-              </Link>
+              <a 
+                href="/forgot-password"
+                className="text-sm text-primary hover:underline" 
+                data-testid="link-forgot-password"
+                onClick={onClose}
+              >
+                Esqueci minha senha
+              </a>
             </div>
           </div>
 

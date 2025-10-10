@@ -316,11 +316,11 @@ export default function RegistrationModal({
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefone (WhatsApp) *</Label>
+              <Label htmlFor="phone">Telefone (WhatsApp) (SEM ESPAÇOS)*</Label>
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+258 84 123 4567"
+                placeholder="+258 8x 12 34 567"
                 value={formData.phone}
                 onChange={(e) => updateFormData("phone", e.target.value)}
                 data-testid="input-phone"
