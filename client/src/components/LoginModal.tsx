@@ -54,7 +54,7 @@ export default function LoginModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="phone">Número de Telefone</Label>
+            <Label htmlFor="phone">Número de Telefone(SEM ESPAÇOS)</Label>
             <div className="relative">
               <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
