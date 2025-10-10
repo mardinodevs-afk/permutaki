@@ -316,7 +316,7 @@ export default function RegistrationModal({
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefone (WhatsApp) (SEM ESPAÇOS)*</Label>
+              <Label htmlFor="phone">Telefone (WhatsApp)* (SEM ESPAÇOS)</Label>
               <Input
                 id="phone"
                 type="tel"
