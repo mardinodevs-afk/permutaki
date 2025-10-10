@@ -559,12 +559,12 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                       disabled={!canEditSalaryLevel()}
                     >
                       <SelectTrigger data-testid="select-profile-grade">
-                        <SelectValue placeholder="Selecione o grau" />
+                        <SelectValue placeholder="Selecione o Escalão" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="A">Grau A</SelectItem>
-                        <SelectItem value="B">Grau B</SelectItem>
-                        <SelectItem value="C">Grau C</SelectItem>
+                        <SelectItem value="A">Escalão A</SelectItem>
+                        <SelectItem value="B">Escalão B</SelectItem>
+                        <SelectItem value="C">Escalão C</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
