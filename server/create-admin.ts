@@ -65,7 +65,7 @@ async function createAdminUser() {
     } else {
       console.log("\n✓ Assistente de Permuta já existe");
       console.log("  Telefone:", assistantData.phone);
-      console.log("  Senha: Assistente@2025"025");
+      console.log("  Senha: Assistente@2025");
     }
 
     console.log("\n=== CREDENCIAIS DE ACESSO ===");
