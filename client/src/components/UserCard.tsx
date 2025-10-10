@@ -17,6 +17,7 @@ interface UserCardProps {
   reviewCount: number;
   isPriorityMatch: boolean;
   canContact: boolean;
+  avatarUrl?: string;
   compatibility?: number;
   whatsappNumber?: string;
   onWhatsAppContact: (id: string) => void;
@@ -36,6 +37,7 @@ export default function UserCard({
   reviewCount,
   isPriorityMatch = false,
   canContact,
+  avatarUrl,
   compatibility = 0,
   whatsappNumber,
   onWhatsAppContact,
@@ -84,7 +86,7 @@ export default function UserCard({
           <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <MapPin className="h-3 w-3 text-primary" />
-              <span>Atual: {currentLocation}</span>
+              <span>Actual: {currentLocation}</span>
             </div>
             <div className="flex items-center gap-1">
               <MapPin className="h-3 w-3 text-green-600" />

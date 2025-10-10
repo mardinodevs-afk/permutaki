@@ -551,7 +551,7 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
 
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
-                      Grau
+                      Escalão
                     </label>
                     <Select 
                       value={profileData.grade} 
@@ -565,8 +565,6 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
                         <SelectItem value="A">Grau A</SelectItem>
                         <SelectItem value="B">Grau B</SelectItem>
                         <SelectItem value="C">Grau C</SelectItem>
-                        <SelectItem value="D">Grau D</SelectItem>
-                        <SelectItem value="E">Grau E</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
