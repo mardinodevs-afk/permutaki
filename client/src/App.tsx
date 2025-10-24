@@ -7,8 +7,11 @@ import { queryClient } from "./lib/queryClient";
 import LandingPage from "@/components/LandingPage";
 import UserDashboard from "@/components/UserDashboard";
 import AdminDashboard from "@/components/AdminDashboard";
+import RootLayout from "@/components/RootLayout";
+import PageSkeleton from "@/components/ui/PageSkeleton";
 import TermsOfService from "@/pages/TermsOfService";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import About from "@/pages/About";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 
@@ -158,45 +161,43 @@ function App() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando...</p>
-        </div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Switch>
-          <Route path="/terms">
-            <TermsOfService />
-          </Route>
-          <Route path="/privacy">
-            <PrivacyPolicy />
-          </Route>
-          <Route path="/forgot-password">
-            <ForgotPassword />
-          </Route>
-          <Route path="/reset-password">
-            <ResetPassword />
-          </Route>
-          <Route>
-            {currentUser ? (
-              currentUser.isAdmin ? (
-                <AdminDashboard onLogout={handleLogout} />
+        <RootLayout>
+          <Switch>
+            <Route path="/terms">
+              <TermsOfService />
+            </Route>
+            <Route path="/about">
+              <About />
+            </Route>
+            <Route path="/privacy">
+              <PrivacyPolicy />
+            </Route>
+            <Route path="/forgot-password">
+              <ForgotPassword />
+            </Route>
+            <Route path="/reset-password">
+              <ResetPassword />
+            </Route>
+            <Route>
+              {currentUser ? (
+                currentUser.isAdmin ? (
+                  <AdminDashboard onLogout={handleLogout} />
+                ) : (
+                  <UserDashboard onLogout={handleLogout} />
+                )
               ) : (
-                <UserDashboard onLogout={handleLogout} />
-              )
-            ) : (
-              <LandingPage onLogin={handleLogin} onRegister={handleRegister} />
-            )}
-          </Route>
-        </Switch>
-        <Toaster />
+                <LandingPage onLogin={handleLogin} onRegister={handleRegister} />
+              )}
+            </Route>
+          </Switch>
+          <Toaster />
+        </RootLayout>
       </TooltipProvider>
     </QueryClientProvider>
   );

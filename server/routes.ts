@@ -317,25 +317,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
         users = users.filter(user => user.desiredProvince === desiredProvince);
       }
       
-      // Return filtered users
-      const filteredUsers = users.map(user => ({
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        sector: user.sector,
-        salaryLevel: user.salaryLevel,
-        grade: user.grade,
-        currentProvince: user.currentProvince,
-        currentDistrict: user.currentDistrict,
-        desiredProvince: user.desiredProvince,
-        desiredDistrict: user.desiredDistrict,
-        phone: user.phone,
-        rating: 0, // TODO: Calculate from ratings table
-        reviewCount: 0 // TODO: Calculate from ratings table
+      // Enrich users with rating and reviewCount from ratings table
+      const enrichedUsers = await Promise.all(users.map(async (user) => {
+        try {
+          const userRatings = await storage.getUserRatings(user.id);
+          const reviewCount = userRatings.length;
+          const rating = reviewCount > 0 ? userRatings.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewCount : 0;
+          return {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            sector: user.sector,
+            salaryLevel: user.salaryLevel,
+            grade: user.grade,
+            currentProvince: user.currentProvince,
+            currentDistrict: user.currentDistrict,
+            desiredProvince: user.desiredProvince,
+            desiredDistrict: user.desiredDistrict,
+            phone: user.phone,
+            rating: parseFloat(rating.toFixed(2)),
+            reviewCount
+          };
+        } catch (err) {
+          return {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            sector: user.sector,
+            salaryLevel: user.salaryLevel,
+            grade: user.grade,
+            currentProvince: user.currentProvince,
+            currentDistrict: user.currentDistrict,
+            desiredProvince: user.desiredProvince,
+            desiredDistrict: user.desiredDistrict,
+            phone: user.phone,
+            rating: 0,
+            reviewCount: 0
+          };
+        }
       }));
-      
-      res.json(filteredUsers);
+
+      res.json(enrichedUsers);
     } catch (error) {
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  // Create rating for a user
+  app.post("/api/ratings", authenticateToken, async (req: any, res) => {
+    try {
+      const { ratedUserId, rating, comment } = req.body;
+      if (!ratedUserId || typeof rating !== 'number') {
+        return res.status(400).json({ message: 'Dados de avaliação incompletos' });
+      }
+
+      const raterId = req.user.id;
+      const success = await storage.createRating({ raterId, ratedUserId, rating, comment });
+
+      if (success) {
+        // fetch updated stats for the rated user
+        try {
+          const userRatings = await storage.getUserRatings(ratedUserId);
+          const reviewCount = userRatings.length;
+          const rating = reviewCount > 0 ? userRatings.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewCount : 0;
+          res.json({ message: 'Avaliação criada com sucesso', rating: parseFloat(rating.toFixed(2)), reviewCount });
+        } catch (err) {
+          res.json({ message: 'Avaliação criada com sucesso' });
+        }
+      } else {
+        res.status(500).json({ message: 'Erro ao criar avaliação' });
+      }
+    } catch (error) {
+      console.error('Create rating error:', error);
       res.status(500).json({ message: 'Erro interno do servidor' });
     }
   });
