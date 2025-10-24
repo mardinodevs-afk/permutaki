@@ -92,8 +92,8 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <InfoCard
               icon={Shield}
-              title="100% Gratuito"
-              description="Serviço completamente gratuito para funcionários públicos de Moçambique."
+              title="100% Seguro"
+              description="Serviço completamente seguro e é voltado apenas para funcionários públicos de Moçambique."
               color="success"
             />
             <InfoCard
@@ -228,8 +228,6 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
           </div>
         </div>
       </section>
-
-      <Footer />
 
       {/* Modals */}
       <LoginModal

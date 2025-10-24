@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +11,7 @@ import { LogOut, Search, User, MessageCircle, Calendar, Shield, Camera, Eye, Eye
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLocation } from "wouter";
 import UserCard from "./UserCard";
+import CardSkeleton from "@/components/ui/CardSkeleton";
 import ThemeToggle from "./ThemeToggle";
 import { mozambiqueData, sectors } from "@shared/mozambique-data";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -203,9 +203,43 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
     // todo: remove mock functionality - implement user reporting
   };
 
-  const handleRateUser = (userId: string) => {
-    console.log("Rate user:", userId);
-    // todo: remove mock functionality - implement user rating
+  const handleRateUser = async (userId: string, rating: number, reason: string, comment: string) => {
+    console.log("Rate user:", userId, rating, reason, comment);
+    try {
+      const token = localStorage.getItem('token');
+      const resp = await fetch('/api/ratings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({ ratedUserId: userId, rating, comment, reason })
+      });
+
+      if (!resp.ok) {
+        console.error('Failed to persist rating', await resp.text());
+        return;
+      }
+
+      const data = await resp.json();
+      if (data && typeof data.rating === 'number' && typeof data.reviewCount === 'number') {
+        setSearchUsers(prev => prev.map(u => u.id === userId ? { ...u, rating: data.rating, reviewCount: data.reviewCount } : u));
+      } else {
+        // fallback: optimistic update
+        setSearchUsers(prev => prev.map(u => {
+          if (u.id !== userId) return u;
+          const prevRating = u.rating || 0;
+          const prevCount = u.reviewCount || 0;
+          const total = prevRating * prevCount + rating;
+          const newCount = prevCount + 1;
+          const newAvg = total / newCount;
+          return { ...u, rating: parseFloat(newAvg.toFixed(2)), reviewCount: newCount };
+        }));
+      }
+
+    } catch (error) {
+      console.error('Error saving rating:', error);
+    }
   };
 
   const handleLogout = () => {
@@ -270,8 +304,8 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
       <header className="border-b border-border bg-card">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-primary">Permutaki</h1>
-            <p className="text-sm text-muted-foreground">Dashboard do Usuário</p>
+            <h1 className="text-2xl font-bold text-primary">PermutAKI</h1>
+            <p className="text-sm text-muted-foreground">Painel do Usuário</p>
           </div>
           
           <div className="flex items-center gap-4">
@@ -333,100 +367,100 @@ export default function UserDashboard({ onLogout }: UserDashboardProps) {
               </div>
             </Card>
 
-            {/* Search Filters */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Filtros de Pesquisa</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Sector</label>
-                  <Select 
-                    value={searchFilters.sector} 
-                    onValueChange={(value) => setSearchFilters(prev => ({ ...prev, sector: value }))}
-                  >
-                    <SelectTrigger data-testid="select-search-sector">
-                      <SelectValue placeholder="Todos os sectores" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all-sectors">Todos os sectores</SelectItem>
-                      {sectors.map((sector) => (
-                        <SelectItem key={sector} value={sector}>
-                          {sector}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Província Actual</label>
-                  <Select 
-                    value={searchFilters.currentProvince} 
-                    onValueChange={(value) => setSearchFilters(prev => ({ ...prev, currentProvince: value }))}
-                  >
-                    <SelectTrigger data-testid="select-search-current-province">
-                      <SelectValue placeholder="Todas as províncias" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all-provinces">Todas as províncias</SelectItem>
-                      {Object.keys(mozambiqueData).map((province) => (
-                        <SelectItem key={province} value={province}>
-                          {province}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Província Pretendida</label>
-                  <Select 
-                    value={searchFilters.desiredProvince} 
-                    onValueChange={(value) => setSearchFilters(prev => ({ ...prev, desiredProvince: value }))}
-                  >
-                    <SelectTrigger data-testid="select-search-desired-province">
-                      <SelectValue placeholder="Todas as províncias" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all-provinces">Todas as províncias</SelectItem>
-                      {Object.keys(mozambiqueData).map((province) => (
-                        <SelectItem key={province} value={province}>
-                          {province}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </Card>
+            {/* Hidden Search Filters (functionality preserved) */}
 
             {/* Search Results */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Parceiros Compatíveis</h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {searchUsers.length > 0 ? searchUsers.map((user) => (
-                  <UserCard
-                    key={user.id}
-                    id={user.id}
-                    name={`${user.firstName} ${user.lastName}`}
-                    sector={user.sector}
-                    salaryLevel={user.salaryLevel}
-                    grade={user.grade}
-                    currentLocation={`${user.currentProvince}, ${user.currentDistrict}`}
-                    desiredLocation={`${user.desiredProvince}, ${user.desiredDistrict}`}
-                    rating={user.rating || 0}
-                    reviewCount={user.reviewCount || 0}
-                    isPriorityMatch={calculateCompatibility(user) >= 80}
-                    compatibility={calculateCompatibility(user)}
-                    whatsappNumber={user.phone}
-                    canContact={currentUser ? (currentUser.whatsappContactsToday < (currentUser.isPremium ? 10 : 2)) : false}
-                    onWhatsAppContact={handleWhatsAppContact}
-                    onReport={handleReportUser}
-                    onRate={handleRateUser}
-                  />
-                )) : (
-                  <p className="text-center text-muted-foreground col-span-2">
-                    Nenhum parceiro encontrado com os filtros aplicados.
-                  </p>
+              {/* Compatible Profiles */}
+              <h3 className="text-lg font-semibold mb-4">Perfis Compatíveis</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {searchUsers.length > 0 && currentUser ? (
+                  (() => {
+                    const compatible = searchUsers.filter(u => calculateCompatibility(u) >= 80);
+                    if (compatible.length === 0) return (
+                      <p className="text-muted-foreground col-span-1">Nenhum perfil compatível encontrado.</p>
+                    );
+                    return compatible.map(user => (
+                      <UserCard
+                        key={user.id}
+                        id={user.id}
+                        name={`${user.firstName} ${user.lastName}`}
+                        sector={user.sector}
+                        salaryLevel={user.salaryLevel}
+                        grade={user.grade}
+                        currentLocation={`${user.currentProvince}, ${user.currentDistrict}`}
+                        desiredLocation={`${user.desiredProvince}, ${user.desiredDistrict}`}
+                        rating={user.rating || 0}
+                        reviewCount={user.reviewCount || 0}
+                        isPriorityMatch={true}
+                        compatibility={calculateCompatibility(user)}
+                        whatsappNumber={user.phone}
+                        canContact={canContactToday}
+                        onWhatsAppContact={handleWhatsAppContact}
+                        onReport={handleReportUser}
+                        onRate={handleRateUser}
+                      />
+                    ));
+                  })()
+                ) : (
+                  // show skeleton placeholders while loading
+                  <>
+                    <div className="col-span-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                          <div key={i} className="w-full">
+                                      <CardSkeleton />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Other Profiles (same sector & level) */}
+              <h3 className="text-lg font-semibold mt-8 mb-4">Outros Perfis</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {searchUsers.length > 0 && currentUser ? (
+                  (() => {
+                    const compatible = searchUsers.filter(u => calculateCompatibility(u) >= 80).map(u => u.id);
+                    const others = searchUsers.filter(u => u.sector === currentUser.sector && u.salaryLevel === currentUser.salaryLevel && !compatible.includes(u.id));
+                    if (others.length === 0) return (
+                      <p className="text-muted-foreground col-span-1">Nenhum outro perfil encontrado.</p>
+                    );
+                    return others.map(user => (
+                      <UserCard
+                        key={user.id}
+                        id={user.id}
+                        name={`${user.firstName} ${user.lastName}`}
+                        sector={user.sector}
+                        salaryLevel={user.salaryLevel}
+                        grade={user.grade}
+                        currentLocation={`${user.currentProvince}, ${user.currentDistrict}`}
+                        desiredLocation={`${user.desiredProvince}, ${user.desiredDistrict}`}
+                        rating={user.rating || 0}
+                        reviewCount={user.reviewCount || 0}
+                        isPriorityMatch={false}
+                        whatsappNumber={user.phone}
+                        canContact={canContactToday}
+                        onWhatsAppContact={handleWhatsAppContact}
+                        onReport={handleReportUser}
+                        onRate={handleRateUser}
+                      />
+                    ));
+                  })()
+                ) : (
+                  <>
+                    <div className="col-span-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                          <div key={i} className="w-full">
+                            <CardSkeleton />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>

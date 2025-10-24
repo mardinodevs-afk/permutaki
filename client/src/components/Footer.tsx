@@ -77,7 +77,7 @@ export default function Footer() {
             <h4 className="font-semibold mb-4 text-foreground">Links Importantes</h4>
             <div className="space-y-2">
               <button 
-                onClick={() => alert('Página em construção. Para mais informações, contacte-nos através dos meios disponíveis.')}
+                onClick={() => setLocation('/about')}
                 className="block text-sm text-muted-foreground hover:text-primary cursor-pointer text-left"
                 data-testid="link-about"
               >
@@ -103,7 +103,7 @@ export default function Footer() {
 
         <div className="border-t border-border mt-8 pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2025 PermutAKI. Todos os direitos reservados. | Versão 1.2 (Beta 1)
+            © 2025 PermutAKI. Todos os direitos reservados. | Versão 1.2.1 (Beta 2)
           </p>
         </div>
       </div>
